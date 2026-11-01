@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time on Site</title>
+<meta name="description" content="Daily arrive and leave times at work, read from your Google Timeline export. Runs entirely in your browser; nothing is uploaded.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%230f766e' stroke-width='3'/%3E%3Cpath d='M16 9v7l5 3' fill='none' stroke='%230f766e' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f5f4f0; --card: #ffffff; --ink: #1d1d1b; --muted: #6a6a64; --line: #e3e1da;
+  --accent: #0f766e; --accent-ink: #ffffff; --accent-soft: #e3f2ef; --warn: #b45309; --warn-soft: #fdf3e4;
+  --radius: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111312; --card: #1a1c1b; --ink: #ecebe6; --muted: #9c9c95; --line: #2c302e;
+    --accent: #2dd4bf; --accent-ink: #0b1a18; --accent-soft: #15302c; --warn: #f5b04c; --warn-soft: #33281a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111312; --card: #1a1c1b; --ink: #ecebe6; --muted: #9c9c95; --line: #2c302e;
+  --accent: #2dd4bf; --accent-ink: #0b1a18; --accent-soft: #15302c; --warn: #f5b04c; --warn-soft: #33281a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+header h1 { font-size: 28px; line-height: 1.15; margin: 8px 0 6px; letter-spacing: -0.01em; }
+.lede { margin: 0 0 20px; color: var(--muted); }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 14px;
+}
+h2 { font-size: 17px; margin: 0; }
+.step { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; }
+details > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::after { content: "Show"; margin-left: auto; font-size: 13px; color: var(--accent); }
+details[open] > summary::after { content: "Hide"; }
+.sum-note { color: var(--muted); font-size: 14px; }
+.hint { color: var(--muted); font-size: 14px; margin: 10px 0 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+button, .file {
+  font: inherit; font-size: 15px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); padding: 10px 14px; cursor: pointer; min-height: 44px;
+}
+button:hover, .file:hover { border-color: var(--accent); }
+button:focus-visible, .file:focus-within, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; }
+.file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status { margin: 12px 0 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
+.status.err { color: var(--warn); }
+.help { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.help summary { font-size: 14px; color: var(--ink); }
+.help ol { margin: 10px 0 0; padding-left: 20px; font-size: 14px; }
+.help p { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+
+/* workplaces */
+.sites { list-style: none; margin: 0; padding: 0; }
+.sites li { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.sites li:first-child { border-top: 0; }
+.sites input[type=checkbox] { width: 22px; height: 22px; margin: 6px 0 0; accent-color: var(--accent); }
+.sites input[type=text] {
+  font: inherit; font-size: 15px; width: 100%; padding: 6px 8px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.sites .meta { grid-column: 2; font-size: 13px; color: var(--muted); }
+.sites .meta a { color: var(--accent); }
+.tag { display: inline-block; font-size: 12px; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); margin-left: 4px; }
+
+/* roster */
+.roster { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 8px 10px; align-items: center; margin-top: 4px; }
+.roster label { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.roster input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
+.roster input[type=time] {
+  font: inherit; font-size: 15px; width: 100%; padding: 6px 8px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 40px;
+}
+.roster .hdr { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* week */
+.weeknav { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; }
+.weeknav button { padding: 0; font-size: 22px; line-height: 1; }
+.weeknav .mid { text-align: center; }
+.weeknav h2 { font-size: 18px; }
+.weeknav input[type=date] {
+  font: inherit; font-size: 13px; color: var(--muted); background: transparent; border: 0; margin-top: 2px; text-align: center;
+}
+.totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 6px; }
+.stat { background: var(--bg); border-radius: 10px; padding: 10px; }
+.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat span { font-size: 12px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 6px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 6px; vertical-align: top; border-bottom: 1px solid var(--line); font-size: 16px; }
+td.day { white-space: nowrap; }
+td.day small, td small { display: block; font-size: 12px; color: var(--muted); line-height: 1.3; }
+td small.over { color: var(--warn); font-weight: 600; }
+tr.notes td { padding-top: 0; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+tr.has-notes td { border-bottom: 0; }
+tr.off td.day::after { content: "day off"; display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); vertical-align: 2px; }
+.none { color: var(--muted); }
+.est { color: var(--warn); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.actions button { flex: 1 1 auto; }
+#sumTable tbody tr { cursor: pointer; }
+#sumTable tbody tr:hover td { background: var(--accent-soft); }
+.legend { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+footer { color: var(--muted); font-size: 13px; margin-top: 24px; }
+footer a { color: var(--accent); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 420px) {
+  td, th { padding-left: 4px; padding-right: 4px; }
+  td { font-size: 15px; }
+  .stat b { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Time on Site</h1>
+    <p class="lede">When you got to work and when you left, read from your Google Timeline. The file is read on this device and never uploaded.</p>
+  </header>
+
+  <section class="card" aria-labelledby="loadTitle">
+    <h2 id="loadTitle"><span class="step">1</span>Load your Timeline</h2>
+    <div class="row">
+      <label class="file" id="fileBtn">
+        <input type="file" id="file" accept=".json,application/json" multiple>
+        <span id="fileLabel">Choose Timeline.json</span>
+      </label>
+      <button class="primary" id="analyse" disabled>Analyse</button>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <details class="help">
+      <summary>How to export it</summary>
+      <ol>
+        <li>On your phone: Settings → Location → Location services → Timeline.</li>
+        <li>Tap <b>Export Timeline data</b> and save the file.</li>
+        <li>Come back here, choose the file, press <b>Analyse</b>.</li>
+      </ol>
+      <p>Each export holds your whole history, so once a week is plenty. If the menu differs on your phone, try Google Maps → your picture → Your Timeline → ⋮ → Location and privacy settings.</p>
+    </details>
+  </section>
+
+  <section class="card" id="sitesCard" hidden>
+    <details id="sitesDetails">
+      <summary><h2><span class="step">2</span>Workplaces</h2><span class="sum-note" id="sitesNote"></span></summary>
+      <p class="hint">Places where you spend weekday daytime, busiest first. Tick the ones that count as work and name them. Tap "map" if unsure what a place is. Choices are remembered on this device.</p>
+      <ul class="sites" id="siteList"></ul>
+    </details>
+  </section>
+
+  <section class="card" id="rosterCard" hidden>
+    <details id="rosterDetails">
+      <summary><h2><span class="step">3</span>Roster</h2><span class="sum-note" id="rosterNote"></span></summary>
+      <p class="hint">Rostered start and finish for each weekday. Untick days you're not rostered; leave the times blank to hide the early and over figures.</p>
+      <div class="roster" id="roster"></div>
+    </details>
+  </section>
+
+  <section class="card" id="weekCard" hidden>
+    <div class="weeknav">
+      <button id="prev" aria-label="Previous week">‹</button>
+      <div class="mid">
+        <h2 id="weekTitle"></h2>
+        <label class="sr" for="jump">Jump to a date</label>
+        <input type="date" id="jump">
+      </div>
+      <button id="next" aria-label="Next week">›</button>
+    </div>
+    <div class="totals" id="totals"></div>
+    <table id="weekTable">
+      <thead><tr><th>Day</th><th>Arrived</th><th>Left</th><th>On site</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="legend">Times are Google's best estimate of when you arrived and left. <span class="est">≈</span> marks a time next to a gap in location data, so treat it as approximate.</p>
+    <div class="actions">
+      <button id="copy">Copy week</button>
+      <button id="csvWeek">CSV, this week</button>
+      <button id="csvAll">CSV, all days</button>
+    </div>
+  </section>
+
+  <section class="card" id="sumCard" hidden>
+    <details id="sumDetails">
+      <summary><h2>All weeks</h2><span class="sum-note" id="sumNote"></span></summary>
+      <p class="hint">Tap a week to open it.</p>
+      <table id="sumTable">
+        <thead><tr><th>Week of</th><th>Days</th><th>On site</th><th>Over</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </details>
+  </section>
+
+  <footer>
+    <p>Reads the Timeline export from Android or iPhone, and older Google Takeout location files. Nothing leaves your browser: there is no server.</p>
+  </footer>
+</main>
+
+<script>
+'use strict';
+
+/* ---------- settings ---------- */
+const STINT_GAP_MIN = 90;   // off site for less than this = same stint (lunch, walk between buildings)
+const SMALL_GAP_MIN = 5;    // ignore gaps shorter than this inside a stint
+const DATA_GAP_MIN = 30;    // no location data this long beside an arrival/departure = approximate
+const CLUSTER_M = 300;      // places closer than this are treated as one site
+const MIN_SITE_HOURS = 8;   // weekday daytime hours before a place is offered as a workplace
+const MAX_SITES = 10;
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const $ = s => document.querySelector(s);
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+};
+
+const state = { visits: [], others: [], clusters: [], days: new Map(), weekStart: null, maxKey: null, minKey: null };
+
+/* ---------- small helpers ---------- */
+const pad = n => String(n).padStart(2, '0');
+function hm(mins) { const m = Math.round(mins); return `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`; }
+function dur(mins) { const m = Math.round(mins); if (m < 60) return `${m} min`; return `${Math.floor(m / 60)} h ${pad(m % 60)}`; }
+function toMin(s) { if (!s) return null; const m = /^(\d{1,2}):(\d{2})/.exec(s); return m ? +m[1] * 60 + +m[2] : null; }
+function distM(a, b) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function parseLatLng(v) {
+  if (v == null) return null;
+  if (typeof v === 'object') {
+    if (v.latLng != null) return parseLatLng(v.latLng);
+    if (v.LatLng != null) return parseLatLng(v.LatLng);
+    if (v.latitudeE7 != null && v.longitudeE7 != null) return { lat: v.latitudeE7 / 1e7, lng: v.longitudeE7 / 1e7 };
+    if (v.lat != null && v.lng != null) return { lat: +v.lat, lng: +v.lng };
+    return null;
+  }
+  const m = /(-?\d+(?:\.\d+)?)\s*°?\s*,\s*(-?\d+(?:\.\d+)?)/.exec(String(v).replace('geo:', ''));
+  return m ? { lat: +m[1], lng: +m[2] } : null;
+}
+
+// A time point: epoch ms plus the UTC offset (minutes) that applied locally.
+function parseTime(s, offMin) {
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (isNaN(t)) return null;
+  let off = (offMin === undefined || offMin === null || offMin === '') ? null : +offMin;
+  if (off === null || isNaN(off)) {
+    const m = /([+-])(\d{2}):?(\d{2})$/.exec(String(s));
+    off = m ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +m[3]) : -new Date(t).getTimezoneOffset();
+  }
+  return { t, off };
+}
+function local(tp) {
+  const d = new Date(tp.t + tp.off * 60000);
+  return { y: d.getUTCFullYear(), mo: d.getUTCMonth(), d: d.getUTCDate(), wd: (d.getUTCDay() + 6) % 7, min: d.getUTCHours() * 60 + d.getUTCMinutes() };
+}
+const keyOf = l => `${l.y}-${pad(l.mo + 1)}-${pad(l.d)}`;
+function keyToDate(k) { const [y, m, d] = k.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+function dateToKey(d) { return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; }
+function addDays(k, n) { const d = keyToDate(k); d.setUTCDate(d.getUTCDate() + n); return dateToKey(d); }
+function mondayOf(k) { const d = keyToDate(k); const wd = (d.getUTCDay() + 6) % 7; return addDays(k, -wd); }
+function nice(k, withYear) { const d = keyToDate(k); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}${withYear ? ' ' + d.getUTCFullYear() : ''}`; }
+// minutes from local midnight of day key k (offset off) to time point tp
+function minsFromMidnight(k, tp) { const d = keyToDate(k); return Math.floor((tp.t - (d.getTime() - tp.off * 60000)) / 60000); }
+
+/* ---------- reading the export ---------- */
+function num(x) { const n = +x; return isNaN(n) ? null : n; }
+
+function fromAndroid(seg) {
+  const s = parseTime(seg.startTime, seg.startTimeTimezoneUtcOffsetMinutes);
+  const e = parseTime(seg.endTime, seg.endTimeTimezoneUtcOffsetMinutes);
+  if (!s || !e || e.t <= s.t) return null;
+  if (seg.visit) {
+    const c = seg.visit.topCandidate || {};
+    return { kind: 'visit', s, e, loc: parseLatLng(c.placeLocation), pid: c.placeId || c.placeID || null,
+      sem: c.semanticType || '', prob: num(seg.visit.probability) ?? num(c.probability) ?? 1, level: num(seg.visit.hierarchyLevel) || 0, name: '' };
+  }
+  if (seg.activity) return { kind: 'move', s, e };
+  return null; // timelinePath and memories are not used
+}
+function fromIos(seg) { return fromAndroid(seg); }
+function fromTakeout(o) {
+  const pv = o.placeVisit, as = o.activitySegment;
+  const x = pv || as;
+  if (!x || !x.duration) return null;
+  const s = parseTime(x.duration.startTimestamp || (x.duration.startTimestampMs && new Date(+x.duration.startTimestampMs).toISOString()));
+  const e = parseTime(x.duration.endTimestamp || (x.duration.endTimestampMs && new Date(+x.duration.endTimestampMs).toISOString()));
+  if (!s || !e || e.t <= s.t) return null;
+  if (pv) {
+    const L = pv.location || {};
+    return { kind: 'visit', s, e, loc: parseLatLng(L), pid: L.placeId || null, sem: L.semanticType || '',
+      prob: pv.visitConfidence != null ? pv.visitConfidence / 100 : 1, level: 0, name: L.name || '' };
+  }
+  return { kind: 'move', s, e };
+}
+
+function ingest(json, out) {
+  let segs = [];
+  if (Array.isArray(json)) segs = json.map(fromIos);
+  else if (json && Array.isArray(json.semanticSegments)) {
+    segs = json.semanticSegments.map(fromAndroid);
+    const fp = json.userLocationProfile && json.userLocationProfile.frequentPlaces;
+    if (Array.isArray(fp)) for (const f of fp) { const loc = parseLatLng(f.placeLocation); if (loc) out.frequent.push({ loc, label: f.label || '', pid: f.placeId }); }
+  }
+  else if (json && Array.isArray(json.timelineObjects)) segs = json.timelineObjects.map(fromTakeout);
+  else return false;
+  for (const s of segs) if (s) out.segs.push(s);
+  return true;
+}
+
+/* ---------- workplaces ---------- */
+function overlap(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
+
+function buildClusters(visits, frequent) {
+  const places = new Map();
+  for (const v of visits) {
+    if (!v.loc || v.level > 0) continue;
+    const key = v.pid || `${v.loc.lat.toFixed(4)},${v.loc.lng.toFixed(4)}`;
+    let p = places.get(key);
+    if (!p) { p = { pid: v.pid, lat: v.loc.lat, lng: v.loc.lng, day: 0, night: 0, total: 0, days: new Set(), sem: new Set(), name: v.name, first: v.s.t, last: v.e.t }; places.set(key, p); }
+    const l = local(v.s), m0 = l.min, m1 = m0 + Math.min((v.e.t - v.s.t) / 60000, 24 * 60);
+    p.total += m1 - m0;
+    p.night += overlap(m0, m1, 0, 300) + overlap(m0, m1, 1320, 1740);
+    if (l.wd < 5) { const d = overlap(m0, m1, 360, 1200); if (d > 0) { p.day += d; p.days.add(keyOf(l)); } }
+    if (v.sem) p.sem.add(v.sem.toUpperCase());
+    if (!p.name && v.name) p.name = v.name;
+    p.first = Math.min(p.first, v.s.t); p.last = Math.max(p.last, v.e.t);
+  }
+  const list = [...places.values()].sort((a, b) => b.day - a.day);
+  const clusters = [];
+  for (const p of list) {
+    let c = clusters.find(c => distM(c, p) <= CLUSTER_M);
+    if (!c) { c = { lat: p.lat, lng: p.lng, pids: new Set(), day: 0, night: 0, total: 0, days: new Set(), sem: new Set(), names: [], first: p.first, last: p.last, maxD: 0 }; clusters.push(c); }
+    if (p.pid) c.pids.add(p.pid);
+    c.day += p.day; c.night += p.night; c.total += p.total;
+    p.days.forEach(d => c.days.add(d)); p.sem.forEach(s => c.sem.add(s));
+    if (p.name && !c.names.includes(p.name)) c.names.push(p.name);
+    c.first = Math.min(c.first, p.first); c.last = Math.max(c.last, p.last);
+    c.maxD = Math.max(c.maxD, distM(c, p));
+  }
+  for (const c of clusters) {
+    c.r = Math.max(200, c.maxD + 150);
+    const fl = frequent.filter(f => distM(c, f.loc) <= CLUSTER_M).map(f => (f.label || '').toUpperCase());
+    c.isHome = c.sem.has('HOME') || c.sem.has('INFERRED_HOME') || fl.includes('HOME') || (c.total > 0 && c.night / c.total > 0.3);
+    c.isWorkGuess = c.sem.has('WORK') || c.sem.has('INFERRED_WORK') || fl.includes('WORK');
+  }
+  return clusters.filter(c => !c.isHome && c.day / 60 >= MIN_SITE_HOURS).slice(0, MAX_SITES);
+}
+
+function applySaved(clusters) {
+  const saved = store.get('tos.sites', []);
+  let anySaved = false;
+  clusters.forEach((c, i) => {
+    const s = saved.find(s => distM(s, c) <= CLUSTER_M);
+    if (s) { c.on = !!s.on; c.label = s.name || ''; anySaved = true; }
+    else { c.on = c.isWorkGuess; c.label = c.names[0] || (c.isWorkGuess ? 'Work' : ''); }
+  });
+  if (!anySaved && !clusters.some(c => c.on) && clusters.length) clusters[0].on = true;
+  clusters.forEach((c, i) => { if (!c.label) c.label = `Place ${i + 1}`; });
+  return anySaved;
+}
+function saveSites() {
+  const saved = store.get('tos.sites', []);
+  for (const c of state.clusters) {
+    const i = saved.findIndex(s => distM(s, c) <= CLUSTER_M);
+    const rec = { lat: c.lat, lng: c.lng, name: c.label, on: c.on };
+    if (i >= 0) saved[i] = rec; else saved.push(rec);
+  }
+  store.set('tos.sites', saved);
+}
+
+function renderSites() {
+  const ul = $('#siteList');
+  if (!state.clusters.length) { ul.innerHTML = '<li><span></span><span class="none">No regular weekday places found in this file.</span></li>'; }
+  else ul.innerHTML = state.clusters.map((c, i) => {
+    const from = new Date(c.first), to = new Date(c.last);
+    const span = `${MONTHS[from.getMonth()]} ${from.getFullYear()} – ${MONTHS[to.getMonth()]} ${to.getFullYear()}`;
+    const map = `https://www.google.com/maps/search/?api=1&query=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`;
+    return `<li>
+      <input type="checkbox" data-i="${i}" ${c.on ? 'checked' : ''} aria-label="Count ${esc(c.label)} as work">
+      <input type="text" data-i="${i}" value="${esc(c.label)}" aria-label="Name for this place">
+      <div class="meta">${Math.round(c.day / 60)} weekday hours over ${c.days.size} days · ${span} · <a href="${map}" target="_blank" rel="noopener">map</a>${c.isWorkGuess ? '<span class="tag">Google: work</span>' : ''}</div>
+    </li>`;
+  }).join('');
+  const on = state.clusters.filter(c => c.on).map(c => c.label);
+  $('#sitesNote').textContent = on.length ? on.join(', ') : 'none ticked';
+}
+
+/* ---------- roster ---------- */
+function getRoster() {
+  const def = DAYS.map((d, i) => ({ on: i < 5, start: i < 5 ? '08:00' : '', end: i < 5 ? '16:06' : '' }));
+  const r = store.get('tos.roster', def);
+  return Array.isArray(r) && r.length === 7 ? r : def;
+}
+function renderRoster() {
+  const r = getRoster();
+  $('#roster').innerHTML = '<span class="hdr">Day</span><span class="hdr">Start</span><span class="hdr">Finish</span>' +
+    r.map((x, i) => `<label><input type="checkbox" data-i="${i}" data-k="on" ${x.on ? 'checked' : ''}>${DAYS[i]}</label>
+      <input type="time" data-i="${i}" data-k="start" value="${esc(x.start)}" aria-label="${DAYS[i]} start" ${x.on ? '' : 'disabled'}>
+      <input type="time" data-i="${i}" data-k="end" value="${esc(x.end)}" aria-label="${DAYS[i]} finish" ${x.on ? '' : 'disabled'}>`).join('');
+  const on = r.map((x, i) => x.on ? DAYS[i] : null).filter(Boolean);
+  const t = r.find(x => x.on && x.start && x.end);
+  $('#rosterNote').textContent = on.length ? `${on.length === 5 && on[0] === 'Mon' && on[4] === 'Fri' ? 'Mon–Fri' : on.join(', ')}${t ? `, ${t.start}–${t.end}` : ''}` : 'none';
+}
+
+/* ---------- the analysis ---------- */
+function lowerBound(arr, x) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; }
+
+function computeDays() {
+  const sites = state.clusters.filter(c => c.on);
+  const matchSite = v => {
+    if (!v.loc) return null;
+    for (const s of sites) if ((v.pid && s.pids.has(v.pid)) || distM(s, v.loc) <= s.r) return s;
+    return null;
+  };
+  const work = [];
+  const otherEnds = [], otherStarts = [];
+  for (const v of state.visits) {
+    const s = matchSite(v);
+    if (s) work.push({ s: v.s, e: v.e, site: s, prob: v.prob });
+    else { otherEnds.push(v.e.t); otherStarts.push(v.s.t); }
+  }
+  for (const m of state.others) { otherEnds.push(m.e.t); otherStarts.push(m.s.t); }
+  otherEnds.sort((a, b) => a - b); otherStarts.sort((a, b) => a - b);
+  let lastData = otherEnds.length ? otherEnds[otherEnds.length - 1] : 0;
+  for (const w of work) if (w.e.t > lastData) lastData = w.e.t;
+
+  work.sort((a, b) => a.s.t - b.s.t);
+  const stints = [];
+  for (const w of work) {
+    const last = stints[stints.length - 1];
+    if (last && w.s.t - last.e.t <= STINT_GAP_MIN * 60000) {
+      const gap = (w.s.t - last.e.t) / 60000;
+      if (gap >= SMALL_GAP_MIN) last.gaps.push({ from: last.e, to: w.s, a: last.lastSite.label, b: w.site.label });
+      if (w.e.t > last.e.t) { last.e = w.e; last.lastSite = w.site; }
+      last.sites.add(w.site.label); last.minProb = Math.min(last.minProb, w.prob);
+    } else stints.push({ s: w.s, e: w.e, sites: new Set([w.site.label]), gaps: [], lastSite: w.site, minProb: w.prob });
+  }
+  for (const st of stints) {
+    // gap in location data just before arrival / just after departure
+    const i = lowerBound(otherEnds, st.s.t + 60001) - 1;
+    st.before = i >= 0 ? Math.max(0, (st.s.t - otherEnds[i]) / 60000) : Infinity;
+    const j = lowerBound(otherStarts, st.e.t - 60000);
+    st.after = j < otherStarts.length ? Math.max(0, (otherStarts[j] - st.e.t) / 60000) : Infinity;
+    st.dataEnds = st.e.t >= lastData - 60000 && j >= otherStarts.length;
+  }
+  const days = new Map();
+  for (const st of stints) {
+    const k = keyOf(local(st.s));
+    if (!days.has(k)) days.set(k, []);
+    days.get(k).push(st);
+  }
+  state.days = days;
+  const keys = [...days.keys()].sort();
+  state.minKey = keys[0] || null; state.maxKey = keys[keys.length - 1] || null;
+}
+
+function dayRow(k) {
+  const stints = state.days.get(k);
+  const wd = (keyToDate(k).getUTCDay() + 6) % 7;
+  const r = getRoster()[wd];
+  const rs = r && r.on ? toMin(r.start) : null;
+  let re = r && r.on ? toMin(r.end) : null;
+  if (rs != null && re != null && re <= rs) re += 1440;
+  const row = { key: k, wd, rostered: !!(r && r.on), stints: stints || [] };
+  if (!stints) return row;
+  const first = stints[0], last = stints.reduce((a, b) => (b.e.t > a.e.t ? b : a));
+  row.inMin = minsFromMidnight(k, first.s);
+  row.outMin = minsFromMidnight(k, last.e);
+  row.onSite = stints.reduce((t, s) => t + minsFromMidnight(k, s.e) - minsFromMidnight(k, s.s), 0);
+  row.inEst = first.before >= DATA_GAP_MIN;
+  row.outEst = last.after >= DATA_GAP_MIN || last.dataEnds;
+  // time on site outside rostered hours, stint by stint (so time at home between a shift and a recall never counts)
+  const span = stints.map(s => [minsFromMidnight(k, s.s), minsFromMidnight(k, s.e)]);
+  row.early = rs != null ? span.reduce((t, [a, b]) => t + overlap(a, b, -Infinity, rs), 0) : null;
+  row.over = re != null ? span.reduce((t, [a, b]) => t + overlap(a, b, re, Infinity), 0) : null;
+  const notes = [];
+  for (const st of stints) for (const g of st.gaps) {
+    const a = minsFromMidnight(k, g.from), b = minsFromMidnight(k, g.to);
+    notes.push(g.a !== g.b ? `${g.a} → ${g.b}, travel ${hm(a)}–${hm(b)}` : `off site ${hm(a)}–${hm(b)}`);
+  }
+  if (stints.length > 1) notes.push('also on site ' + stints.slice(1).map(s => `${hm(minsFromMidnight(k, s.s))}–${hm(minsFromMidnight(k, s.e))}`).join(', '));
+  const allSites = new Set(); stints.forEach(s => s.sites.forEach(x => allSites.add(x)));
+  if (state.clusters.filter(c => c.on).length > 1) notes.push([...allSites].join(' + '));
+  const gapText = m => (m === Infinity || m > 1440 ? '' : ` for ${dur(m)}`);
+  if (row.inEst) notes.push(`no location data${gapText(first.before)} before arrival`);
+  if (last.dataEnds) notes.push('location data ends here: export again later for the finish time');
+  else if (row.outEst) notes.push(`no location data${gapText(last.after)} after leaving`);
+  if (stints.some(s => s.minProb < 0.5)) notes.push('Google was unsure of the place');
+  row.notes = notes;
+  return row;
+}
+
+/* ---------- week view ---------- */
+function timeCell(mins, est, sub, subOver) {
+  const plus = mins >= 1440 ? ' <small>next day</small>' : '';
+  return `${est ? '<span class="est" title="Approximate">≈</span>' : ''}${hm(mins)}${plus}${sub ? `<small class="${subOver ? 'over' : ''}">${sub}</small>` : ''}`;
+}
+function renderWeek() {
+  const ws = state.weekStart;
+  const keys = [...Array(7)].map((_, i) => addDays(ws, i));
+  const rows = keys.map(dayRow);
+  const we = keys[6];
+  const sameYear = keyToDate(ws).getUTCFullYear() === keyToDate(we).getUTCFullYear();
+  $('#weekTitle').textContent = `${nice(ws, !sameYear)} – ${nice(we, true)}`;
+  $('#jump').value = ws;
+  $('#prev').disabled = !state.minKey || ws <= mondayOf(state.minKey);
+  $('#next').disabled = !state.maxKey || ws >= mondayOf(state.maxKey);
+
+  let html = '';
+  for (const r of rows) {
+    const d = keyToDate(r.key);
+    const label = `${DAYS[r.wd]}<small>${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}</small>`;
+    if (!r.stints.length) {
+      html += `<tr><td class="day">${label}</td><td colspan="3" class="none">${r.rostered ? 'Not at work' : '—'}</td></tr>`;
+      continue;
+    }
+    const off = !r.rostered;
+    const earlySub = r.early > 0 ? `${dur(r.early)} early` : '';
+    const overSub = r.over > 0 ? `${dur(r.over)} over` : '';
+    const hasNotes = r.notes.length > 0;
+    html += `<tr class="${off ? 'off' : ''} ${hasNotes ? 'has-notes' : ''}"><td class="day">${label}</td>
+      <td>${timeCell(r.inMin, r.inEst, earlySub, r.early >= 15)}</td>
+      <td>${timeCell(r.outMin, r.outEst, overSub, r.over >= 15)}</td>
+      <td>${dur(r.onSite)}</td></tr>`;
+    if (hasNotes) html += `<tr class="notes"><td></td><td colspan="3">${esc(r.notes.join(' · '))}</td></tr>`;
+  }
+  $('#weekTable tbody').innerHTML = html;
+
+  const worked = rows.filter(r => r.stints.length);
+  const tot = worked.reduce((t, r) => t + r.onSite, 0);
+  const over = worked.reduce((t, r) => t + (r.over || 0), 0);
+  const early = worked.reduce((t, r) => t + (r.early || 0), 0);
+  const offDays = worked.filter(r => !r.rostered).length;
+  $('#totals').innerHTML = `<div class="stat"><b>${tot ? dur(tot) : '0'}</b><span>on site, ${worked.length} day${worked.length === 1 ? '' : 's'}</span></div>
+    <div class="stat"><b>${over ? dur(over) : '0'}</b><span>past rostered finish</span></div>
+    <div class="stat"><b>${early ? dur(early) : '0'}</b><span>before rostered start${offDays ? ` · ${offDays} day${offDays === 1 ? '' : 's'} off on site` : ''}</span></div>`;
+  state.weekRows = rows;
+}
+
+function renderSummary() {
+  const weeks = new Map();
+  for (const k of state.days.keys()) {
+    const w = mondayOf(k);
+    if (!weeks.has(w)) weeks.set(w, { days: 0, on: 0, over: 0 });
+    const r = dayRow(k), x = weeks.get(w);
+    x.days++; x.on += r.onSite; x.over += r.over || 0;
+  }
+  const list = [...weeks.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  $('#sumTable tbody').innerHTML = list.map(([w, x]) =>
+    `<tr data-w="${w}"><td>${nice(w, true)}</td><td>${x.days}</td><td>${dur(x.on)}</td><td>${x.over ? dur(x.over) : '—'}</td></tr>`).join('');
+  $('#sumNote').textContent = `${list.length} week${list.length === 1 ? '' : 's'}`;
+}
+
+function refresh() {
+  computeDays();
+  if (!state.weekStart || (state.maxKey && state.weekStart > mondayOf(state.maxKey))) state.weekStart = state.maxKey ? mondayOf(state.maxKey) : mondayOf(dateToKey(new Date()));
+  renderWeek();
+  renderSummary();
+}
+
+/* ---------- export ---------- */
+function rowsToTable(rows) {
+  const head = ['date', 'day', 'arrived', 'left', 'on_site_hours', 'early_min', 'over_min', 'rostered', 'approximate', 'notes'];
+  const body = rows.filter(r => r.stints.length).map(r => [
+    r.key, DAYS[r.wd], hm(r.inMin), hm(r.outMin) + (r.outMin >= 1440 ? ' (+1)' : ''), (r.onSite / 60).toFixed(2),
+    r.early == null ? '' : Math.round(r.early), r.over == null ? '' : Math.round(r.over), r.rostered ? 'yes' : 'no',
+    [r.inEst ? 'arrival' : '', r.outEst ? 'departure' : ''].filter(Boolean).join('+'), (r.notes || []).join('; ')]);
+  return [head, ...body];
+}
+function toCSV(t) { return t.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n'); }
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function copyText(text, btn) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); btn.textContent = 'Copied'; } catch (e2) { btn.textContent = 'Copy failed'; }
+    ta.remove();
+  }
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
+
+/* ---------- wiring ---------- */
+const status = (msg, err) => { const el = $('#status'); el.textContent = msg; el.classList.toggle('err', !!err); };
+
+$('#file').addEventListener('change', e => {
+  const files = [...e.target.files];
+  $('#fileLabel').textContent = files.length ? (files.length === 1 ? files[0].name : `${files.length} files`) : 'Choose Timeline.json';
+  $('#analyse').disabled = !files.length;
+  status(files.length ? `${(files.reduce((t, f) => t + f.size, 0) / 1048576).toFixed(1)} MB ready. Press Analyse.` : '');
+});
+
+$('#analyse').addEventListener('click', async () => {
+  const files = [...$('#file').files];
+  if (!files.length) return;
+  $('#analyse').disabled = true;
+  const out = { segs: [], frequent: [] };
+  let bad = 0;
+  for (const f of files) {
+    status(`Reading ${f.name}…`);
+    await new Promise(r => setTimeout(r, 30));
+    try { if (!ingest(JSON.parse(await f.text()), out)) bad++; }
+    catch (err) { bad++; }
+  }
+  $('#analyse').disabled = false;
+  // de-duplicate (several exports may overlap)
+  const seen = new Set(), segs = [];
+  for (const s of out.segs) { const k = `${s.kind}|${s.s.t}|${s.e.t}|${s.pid || ''}|${s.level || 0}`; if (!seen.has(k)) { seen.add(k); segs.push(s); } }
+  state.visits = segs.filter(s => s.kind === 'visit');
+  state.others = segs.filter(s => s.kind !== 'visit');
+  if (!state.visits.length) {
+    status(bad ? "That doesn't look like a Timeline export. Use the file from Settings → Location → Timeline → Export Timeline data." : 'No visits found in this file.', true);
+    return;
+  }
+  let first = Infinity, last = 0;
+  for (const v of state.visits) { if (v.s.t < first) first = v.s.t; if (v.e.t > last) last = v.e.t; }
+  const f = new Date(first), l = new Date(last);
+  status(`${state.visits.length.toLocaleString()} visits, ${f.getDate()} ${MONTHS[f.getMonth()]} ${f.getFullYear()} to ${l.getDate()} ${MONTHS[l.getMonth()]} ${l.getFullYear()}.${bad ? ` ${bad} file(s) skipped.` : ''}`);
+  state.clusters = buildClusters(state.visits, out.frequent);
+  const hadSaved = applySaved(state.clusters);
+  saveSites();
+  renderSites(); renderRoster();
+  $('#sitesDetails').open = !hadSaved;
+  ['#sitesCard', '#rosterCard', '#weekCard', '#sumCard'].forEach(s => { $(s).hidden = false; });
+  state.weekStart = null;
+  refresh();
+  if (!hadSaved) $('#sitesCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+$('#siteList').addEventListener('change', e => {
+  const i = +e.target.dataset.i; const c = state.clusters[i]; if (!c) return;
+  if (e.target.type === 'checkbox') c.on = e.target.checked;
+  if (e.target.type === 'text') c.label = e.target.value.trim() || `Place ${i + 1}`;
+  saveSites(); renderSites(); refresh();
+});
+$('#roster').addEventListener('change', e => {
+  const i = +e.target.dataset.i, k = e.target.dataset.k; if (isNaN(i)) return;
+  const r = getRoster();
+  r[i][k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  store.set('tos.roster', r);
+  renderRoster(); refresh();
+});
+$('#prev').addEventListener('click', () => { state.weekStart = addDays(state.weekStart, -7); renderWeek(); });
+$('#next').addEventListener('click', () => { state.weekStart = addDays(state.weekStart, 7); renderWeek(); });
+$('#jump').addEventListener('change', e => { if (e.target.value) { state.weekStart = mondayOf(e.target.value); renderWeek(); } });
+$('#sumTable').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-w]'); if (!tr) return;
+  state.weekStart = tr.dataset.w; renderWeek();
+  $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+$('#copy').addEventListener('click', e => copyText(rowsToTable(state.weekRows).map(r => r.join('\t')).join('\n'), e.currentTarget));
+$('#csvWeek').addEventListener('click', () => download(`time-on-site_${state.weekStart}.csv`, toCSV(rowsToTable(state.weekRows))));
+$('#csvAll').addEventListener('click', () => {
+  const keys = [...state.days.keys()].sort();
+  download('time-on-site_all.csv', toCSV(rowsToTable(keys.map(dayRow))));
+});
+</script>
+</body>
+</html>
