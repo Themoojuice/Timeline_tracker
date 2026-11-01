@@ -12,7 +12,7 @@
  *   Weeks      – one row per week, worked out from All days
  */
 
-var DAY_TEXT_COLUMNS = [1, 2, 3, 4, 8, 9, 10, 11]; // Date, Day, Arrived, Left, Rostered, Approximate, Sites, Notes
+var DAY_TEXT_COLUMNS = [1, 2, 3, 4, 8, 9, 10, 11, 12]; // Date, Day, Arrived, Left, Rostered, Approximate, Sites, Notes, My note
 var WEEK_HEAD = ['Week of', 'Days', 'On site (h)', 'Over (min)', 'Early (min)'];
 
 function doPost(e) {
@@ -61,7 +61,7 @@ function weeksFrom_(table) {
   var acc = {};
   table.slice(1).forEach(function (r) {
     var p = String(r[0]).split('-');
-    if (p.length !== 3) return;
+    if (p.length !== 3 || !r[2]) return; // skip note-only days (leave, days off) with no arrival
     var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
     d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
     var k = d.toISOString().slice(0, 10);

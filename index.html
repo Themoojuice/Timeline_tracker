@@ -95,6 +95,37 @@ input[type=text], input[type=url] {
   border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 40px;
 }
 .roster .hdr { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.period { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.period:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.period-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 15px; }
+.period-head .link { margin-left: auto; }
+.period-head input[type=date], .addperiod input[type=date] {
+  font: inherit; font-size: 15px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.addperiod { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 15px; }
+
+/* week at a glance */
+.dayline { margin: 12px 0 0; }
+.dayline svg { display: block; width: 100%; height: auto; }
+.dl-grid { stroke: var(--line); stroke-width: 1; }
+.dl-tick, .dl-day { fill: var(--muted); font-size: 11px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.dl-roster { fill: var(--accent-soft); stroke: var(--accent); stroke-opacity: 0.35; }
+.dl-core { fill: var(--accent); }
+.dl-early { fill: var(--accent); opacity: 0.45; }
+.dl-over { fill: var(--warn); }
+.dl-key { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 6px 0 4px; }
+.dl-key span { display: inline-flex; align-items: center; gap: 5px; }
+.dl-key i { display: inline-block; width: 14px; height: 7px; border-radius: 2px; }
+
+/* notes */
+button.note-add { background: none; border: 0; padding: 4px 0 0; min-height: 0; font-size: 12px; color: var(--accent); cursor: pointer; display: block; }
+.mynote { color: var(--ink); }
+.mynote button { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--ink); text-decoration: underline dotted; text-align: left; cursor: pointer; display: inline; }
+.noteedit { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
+.noteedit input { flex: 1 1 180px; }
+.noteedit button { min-height: 38px; padding: 6px 12px; font-size: 14px; }
+.sharpen { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.sharpen input { width: 18px; height: 18px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
 
 /* week */
 .weeknav { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; }
@@ -180,8 +211,13 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; font-size:
   <section class="card" id="rosterCard" hidden>
     <details id="rosterDetails">
       <summary><h2><span class="step">3</span>Roster</h2><span class="sum-note" id="rosterNote"></span></summary>
-      <p class="hint">Rostered start and finish for each weekday. Untick days you're not rostered; leave the times blank to hide the early and over figures.</p>
-      <div class="roster" id="roster"></div>
+      <p class="hint">Rostered start and finish for each weekday. When a rotation changes, add a new roster from its first day; earlier weeks keep the old one. Untick days you're not rostered; leave times blank to hide the early and over figures.</p>
+      <div id="rosterPeriods"></div>
+      <div class="addperiod">
+        <label for="newFrom">New roster from</label>
+        <input type="date" id="newFrom">
+        <button id="addRoster" type="button">Add</button>
+      </div>
     </details>
   </section>
 
@@ -196,11 +232,19 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; font-size:
       <button id="next" aria-label="Next week">›</button>
     </div>
     <div class="totals" id="totals"></div>
+    <div class="dayline" id="dayline" role="img" aria-label="Week at a glance: rostered hours and time on site for each day"></div>
+    <div class="dl-key" aria-hidden="true">
+      <span><i style="background: var(--accent-soft); border: 1px solid var(--accent)"></i>Rostered</span>
+      <span><i style="background: var(--accent)"></i>On site</span>
+      <span><i style="background: var(--accent); opacity: 0.45"></i>Before start</span>
+      <span><i style="background: var(--warn)"></i>After finish or day off</span>
+    </div>
     <table id="weekTable">
       <thead><tr><th>Day</th><th>Arrived</th><th>Left</th><th>On site</th></tr></thead>
       <tbody></tbody>
     </table>
-    <p class="legend">Times are Google's best estimate of when you arrived and left. <span class="est">≈</span> marks a time next to a gap in location data, so treat it as approximate.</p>
+    <p class="legend">Times are cut to the minute. <span class="est">≈</span> marks a time next to a gap in location data, so treat it as approximate. Tap "+ note" under a day to add your own note; notes go to the sheet too, so keep patient details out.</p>
+    <label class="sharpen" id="sharpenRow" hidden><input type="checkbox" id="sharpen"><span>Sharpen arrive and leave times with your phone's raw GPS points, where the export has them. Uses the first and last point inside the workplace, usually within 2 minutes of the real crossing.</span></label>
     <div class="actions">
       <button class="primary wide" id="toSheets">Send to Google Sheets</button>
       <button id="copy">Copy week</button>
@@ -297,7 +341,12 @@ const idb = {
   }
 };
 
-const state = { visits: [], others: [], frequent: [], clusters: [], days: new Map(), weekStart: null, maxKey: null, minKey: null, weekRows: [] };
+const state = { visits: [], others: [], frequent: [], raw: [], clusters: [], days: new Map(), weekStart: null, maxKey: null, minKey: null, weekRows: [], editing: null };
+
+// Raw GPS refinement
+const RAW_MAX_ACC = 100;          // metres; looser fixes are ignored
+const RAW_BRACKET_MS = 10 * 60000; // the crossing must be pinned between two fixes this close together
+const RAW_RUN_MS = 10 * 60000;     // and you must stay on the same side for this long
 
 /* ---------- small helpers ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -389,6 +438,11 @@ function ingest(json, out) {
     segs = json.semanticSegments.map(fromAndroid);
     const fp = json.userLocationProfile && json.userLocationProfile.frequentPlaces;
     if (Array.isArray(fp)) for (const f of fp) { const loc = parseLatLng(f.placeLocation); if (loc) out.frequent.push({ loc, label: f.label || '', pid: f.placeId }); }
+    if (Array.isArray(json.rawSignals)) for (const r of json.rawSignals) {
+      const p = r && r.position; if (!p) continue;
+      const loc = parseLatLng(p.LatLng || p.latLng), t = Date.parse(p.timestamp);
+      if (loc && !isNaN(t)) out.raw.push([t, +loc.lat.toFixed(6), +loc.lng.toFixed(6), +p.accuracyMeters || 0]);
+    }
   }
   else if (json && Array.isArray(json.timelineObjects)) segs = json.timelineObjects.map(fromTakeout);
   else return false;
@@ -474,25 +528,102 @@ function renderSites() {
   $('#sitesNote').textContent = on.length ? on.join(', ') : 'none ticked';
 }
 
-/* ---------- roster ---------- */
-function getRoster() {
-  const def = DAYS.map((d, i) => ({ on: i < 5, start: i < 5 ? '08:00' : '', end: i < 5 ? '16:06' : '' }));
-  const r = store.get('tos.roster', def);
-  return Array.isArray(r) && r.length === 7 ? r : def;
+/* ---------- roster (dated periods) ---------- */
+function defaultDays() { return DAYS.map((d, i) => ({ on: i < 5, start: i < 5 ? '08:00' : '', end: i < 5 ? '16:06' : '' })); }
+// Periods: [{from: null | 'YYYY-MM-DD', days: [7 × {on, start, end}]}]; the first has no start and covers everything before the next.
+function getRosters() {
+  let p = store.get('tos.rosters', null);
+  if (!Array.isArray(p) || !p.length) {
+    const old = store.get('tos.roster', null); // single roster from the first version
+    p = [{ from: null, days: Array.isArray(old) && old.length === 7 ? old : defaultDays() }];
+  }
+  p = p.filter(x => x && Array.isArray(x.days) && x.days.length === 7);
+  if (!p.length) p = [{ from: null, days: defaultDays() }];
+  p.sort((a, b) => ((a.from || '') < (b.from || '') ? -1 : 1));
+  p[0].from = null;
+  return p;
+}
+function saveRosters(p) { store.set('tos.rosters', p); }
+function rosterFor(k) { let cur = null; for (const x of getRosters()) if (!x.from || x.from <= k) cur = x; return cur.days; }
+function daysSummary(days) {
+  const on = days.map((x, i) => x.on ? DAYS[i] : null).filter(Boolean);
+  const t = days.find(x => x.on && x.start && x.end);
+  return on.length ? `${on.length === 5 && on[0] === 'Mon' && on[4] === 'Fri' ? 'Mon–Fri' : on.join(', ')}${t ? `, ${t.start}–${t.end}` : ''}` : 'no rostered days';
+}
+function dayGrid(days, pi) {
+  return '<div class="roster"><span class="hdr">Day</span><span class="hdr">Start</span><span class="hdr">Finish</span>' +
+    days.map((x, i) => `<label><input type="checkbox" data-p="${pi}" data-i="${i}" data-k="on" ${x.on ? 'checked' : ''}>${DAYS[i]}</label>
+      <input type="time" data-p="${pi}" data-i="${i}" data-k="start" value="${esc(x.start || '')}" aria-label="${DAYS[i]} start" ${x.on ? '' : 'disabled'}>
+      <input type="time" data-p="${pi}" data-i="${i}" data-k="end" value="${esc(x.end || '')}" aria-label="${DAYS[i]} finish" ${x.on ? '' : 'disabled'}>`).join('') + '</div>';
 }
 function renderRoster() {
-  const r = getRoster();
-  $('#roster').innerHTML = '<span class="hdr">Day</span><span class="hdr">Start</span><span class="hdr">Finish</span>' +
-    r.map((x, i) => `<label><input type="checkbox" data-i="${i}" data-k="on" ${x.on ? 'checked' : ''}>${DAYS[i]}</label>
-      <input type="time" data-i="${i}" data-k="start" value="${esc(x.start || '')}" aria-label="${DAYS[i]} start" ${x.on ? '' : 'disabled'}>
-      <input type="time" data-i="${i}" data-k="end" value="${esc(x.end || '')}" aria-label="${DAYS[i]} finish" ${x.on ? '' : 'disabled'}>`).join('');
-  const on = r.map((x, i) => x.on ? DAYS[i] : null).filter(Boolean);
-  const t = r.find(x => x.on && x.start && x.end);
-  $('#rosterNote').textContent = on.length ? `${on.length === 5 && on[0] === 'Mon' && on[4] === 'Fri' ? 'Mon–Fri' : on.join(', ')}${t ? `, ${t.start}–${t.end}` : ''}` : 'none';
+  const p = getRosters();
+  $('#rosterPeriods').innerHTML = p.map((x, pi) => {
+    const head = pi === 0
+      ? `<b>${p.length > 1 ? `Before ${nice(p[1].from, true)}` : 'All weeks'}</b>`
+      : `<b>From</b><input type="date" data-p="${pi}" data-k="from" value="${esc(x.from)}" aria-label="Roster start date"><button class="link" type="button" data-del="${pi}">Remove</button>`;
+    return `<div class="period"><div class="period-head">${head}</div>${dayGrid(x.days, pi)}</div>`;
+  }).reverse().join('');
+  $('#rosterNote').textContent = daysSummary(p[p.length - 1].days) + (p.length > 1 ? ` · ${p.length} rosters` : '');
+  if (!$('#newFrom').value && state.maxKey) $('#newFrom').value = addDays(mondayOf(state.maxKey), 7);
 }
 
 /* ---------- the analysis ---------- */
 function lowerBound(arr, x) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; }
+
+// Raw GPS points: [time ms, lat, lng, accuracy m], sorted by time.
+function rawIndex(t) { const R = state.raw; let lo = 0, hi = R.length; while (lo < hi) { const m = (lo + hi) >> 1; if (R[m][0] < t) lo = m + 1; else hi = m; } return lo; }
+const rawIn = (site, p) => distM(site, { lat: p[1], lng: p[2] }) <= (site.rawR || site.r);
+// The boundary for raw points is learned from where your phone actually sits during visits there,
+// because indoor GPS on a big campus can sit a couple of hundred metres from Google's pin.
+function learnRawRadius(site, work) {
+  const ds = [];
+  for (const w of work) {
+    if (w.site !== site) continue;
+    const a = w.s.t + 10 * 60000, b = w.e.t - 10 * 60000; if (b <= a) continue;
+    for (let j = rawIndex(a); j < state.raw.length && state.raw[j][0] <= b; j++) {
+      const p = state.raw[j]; if (p[3] <= RAW_MAX_ACC) ds.push(distM(site, { lat: p[1], lng: p[2] }));
+    }
+  }
+  ds.sort((x, y) => x - y);
+  site.rawR = ds.length >= 20 ? Math.min(600, Math.max(site.r, ds[Math.floor(ds.length * 0.9)] + 60)) : site.r + 50;
+  return site.rawR;
+}
+function insideShare(site, t0, t1) {
+  let n = 0, k = 0;
+  for (let j = rawIndex(t0); j < state.raw.length && state.raw[j][0] <= t1; j++) {
+    const p = state.raw[j]; if (p[3] > RAW_MAX_ACC * 1.5) continue;
+    n++; if (rawIn(site, p)) k++;
+  }
+  return n ? k / n : null;
+}
+// First point inside the site near Timeline's arrival, with the previous point outside and close in time.
+function refineArrival(site, tv) {
+  const R = state.raw;
+  for (let i = rawIndex(tv - 20 * 60000); i < R.length && R[i][0] <= tv + 10 * 60000; i++) {
+    const p = R[i];
+    if (p[3] > RAW_MAX_ACC || !rawIn(site, p)) continue;
+    let j = i - 1; while (j >= 0 && R[j][3] > RAW_MAX_ACC * 1.5) j--;
+    if (j < 0 || rawIn(site, R[j]) || p[0] - R[j][0] > RAW_BRACKET_MS) continue;
+    const share = insideShare(site, p[0] + 1, p[0] + RAW_RUN_MS);
+    if (share !== null && share >= 0.8) return p[0];
+  }
+  return null;
+}
+// Last point inside the site near Timeline's departure, with the next point outside and close in time.
+function refineDeparture(site, tv) {
+  const R = state.raw;
+  for (let i = rawIndex(tv + 20 * 60000 + 1) - 1; i >= 0 && R[i][0] >= tv - 10 * 60000; i--) {
+    const p = R[i];
+    if (p[3] > RAW_MAX_ACC || !rawIn(site, p)) continue;
+    let j = i + 1; while (j < R.length && R[j][3] > RAW_MAX_ACC * 1.5) j++;
+    if (j >= R.length || rawIn(site, R[j]) || R[j][0] - p[0] > RAW_BRACKET_MS) continue;
+    const share = insideShare(site, p[0] - RAW_RUN_MS, p[0] - 1);
+    if (share !== null && share >= 0.8) return p[0];
+  }
+  return null;
+}
+function sharpenOn() { return store.get('tos.sharpen', true) && state.raw.length > 0; }
 
 function computeDays() {
   const sites = state.clusters.filter(c => c.on);
@@ -522,14 +653,22 @@ function computeDays() {
       if (gap >= SMALL_GAP_MIN) last.gaps.push({ from: last.e, to: w.s, a: last.lastSite.label, b: w.site.label });
       if (w.e.t > last.e.t) { last.e = w.e; last.lastSite = w.site; }
       last.sites.add(w.site.label); last.minProb = Math.min(last.minProb, w.prob);
-    } else stints.push({ s: w.s, e: w.e, sites: new Set([w.site.label]), gaps: [], lastSite: w.site, minProb: w.prob });
+    } else stints.push({ s: w.s, e: w.e, sites: new Set([w.site.label]), gaps: [], firstSite: w.site, lastSite: w.site, minProb: w.prob });
   }
+  const sharpen = sharpenOn();
+  if (sharpen) for (const s of sites) learnRawRadius(s, work);
   for (const st of stints) {
+    // data gaps are judged on Timeline's own edges, before any sharpening
     const i = lowerBound(otherEnds, st.s.t + 60001) - 1;
     st.before = i >= 0 ? Math.max(0, (st.s.t - otherEnds[i]) / 60000) : Infinity;
     const j = lowerBound(otherStarts, st.e.t - 60000);
     st.after = j < otherStarts.length ? Math.max(0, (otherStarts[j] - st.e.t) / 60000) : Infinity;
     st.dataEnds = st.e.t >= lastData - 60000 && j >= otherStarts.length;
+    st.timelineS = st.s; st.timelineE = st.e;
+    if (sharpen) {
+      const a = refineArrival(st.firstSite, st.s.t); if (a) { st.s = { t: a, off: st.s.off }; st.sharpS = true; }
+      const d = st.dataEnds ? null : refineDeparture(st.lastSite, st.e.t); if (d) { st.e = { t: d, off: st.e.off }; st.sharpE = true; }
+    }
   }
   const days = new Map();
   for (const st of stints) {
@@ -545,18 +684,25 @@ function computeDays() {
 function dayRow(k) {
   const stints = state.days.get(k);
   const wd = (keyToDate(k).getUTCDay() + 6) % 7;
-  const r = getRoster()[wd];
+  const r = rosterFor(k)[wd];
   const rs = r && r.on ? toMin(r.start) : null;
   let re = r && r.on ? toMin(r.end) : null;
   if (rs != null && re != null && re <= rs) re += 1440;
-  const row = { key: k, wd, rostered: !!(r && r.on), stints: stints || [] };
+  const row = { key: k, wd, rostered: !!(r && r.on), rs, re, stints: stints || [], spans: [], note: store.get('tos.notes', {})[k] || '' };
   if (!stints) return row;
   const first = stints[0], last = stints.reduce((a, b) => (b.e.t > a.e.t ? b : a));
   row.inMin = minsFromMidnight(k, first.s);
   row.outMin = minsFromMidnight(k, last.e);
   row.onSite = stints.reduce((t, s) => t + minsFromMidnight(k, s.e) - minsFromMidnight(k, s.s), 0);
-  row.inEst = first.before >= DATA_GAP_MIN;
-  row.outEst = last.after >= DATA_GAP_MIN || last.dataEnds;
+  row.inEst = first.before >= DATA_GAP_MIN && !first.sharpS;
+  row.outEst = (last.after >= DATA_GAP_MIN || last.dataEnds) && !last.sharpE;
+  row.sharp = !!(first.sharpS || last.sharpE);
+  // on-site intervals for the timeline: each stint minus its off-site gaps
+  for (const st of stints) {
+    let cur = minsFromMidnight(k, st.s);
+    for (const g of st.gaps) { const a = minsFromMidnight(k, g.from), b = minsFromMidnight(k, g.to); if (a > cur) row.spans.push([cur, a]); cur = Math.max(cur, b); }
+    const end = minsFromMidnight(k, st.e); if (end > cur) row.spans.push([cur, end]);
+  }
   // time on site outside rostered hours, stint by stint (so time at home between a shift and a recall never counts)
   const span = stints.map(s => [minsFromMidnight(k, s.s), minsFromMidnight(k, s.e)]);
   row.early = rs != null ? span.reduce((t, [a, b]) => t + overlap(a, b, -Infinity, rs), 0) : null;
@@ -584,6 +730,37 @@ function timeCell(mins, est, sub, subOver) {
   const plus = mins >= 1440 ? ' <small>next day</small>' : '';
   return `${est ? '<span class="est" title="Approximate">≈</span>' : ''}${hm(mins)}${plus}${sub ? `<small class="${subOver ? 'over' : ''}">${sub}</small>` : ''}`;
 }
+function renderDayline(rows) {
+  const box = $('#dayline');
+  let lo = 7 * 60, hi = 18 * 60;
+  for (const r of rows) {
+    if (r.rostered && r.rs != null && r.re != null) { lo = Math.min(lo, r.rs); hi = Math.max(hi, r.re); }
+    for (const [a, b] of r.spans) { lo = Math.min(lo, a); hi = Math.max(hi, b); }
+  }
+  lo = Math.max(0, Math.floor(lo / 60) * 60); hi = Math.min(lo + 30 * 60, Math.ceil(hi / 60) * 60);
+  const W = Math.max(280, Math.round(box.clientWidth || 340)), L = 34, Rm = 8, top = 18, rowH = 22, H = top + 7 * rowH + 2;
+  const x = m => (L + (Math.min(Math.max(m, lo), hi) - lo) / (hi - lo) * (W - L - Rm)).toFixed(1);
+  const step = (hi - lo) > 15 * 60 ? 180 : 120;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`;
+  for (let m = Math.ceil(lo / step) * step; m <= hi; m += step) {
+    const anchor = x(m) > W - 24 ? 'end' : 'middle';
+    s += `<line class="dl-grid" x1="${x(m)}" x2="${x(m)}" y1="${top - 2}" y2="${H}"/><text class="dl-tick" x="${anchor === 'end' ? W - 1 : x(m)}" y="11" text-anchor="${anchor}">${pad(Math.floor(m / 60) % 24)}:00</text>`;
+  }
+  rows.forEach((r, i) => {
+    const cy = top + i * rowH + rowH / 2;
+    s += `<text class="dl-day" x="0" y="${cy + 4}">${DAYS[r.wd]}</text>`;
+    const hasRoster = r.rostered && r.rs != null && r.re != null;
+    if (hasRoster) s += `<rect class="dl-roster" x="${x(r.rs)}" y="${cy - 7}" width="${(x(r.re) - x(r.rs)).toFixed(1)}" height="14" rx="3"/>`;
+    for (const [a, b] of r.spans) {
+      const parts = hasRoster
+        ? [[a, Math.min(b, r.rs), 'dl-early'], [Math.max(a, r.rs), Math.min(b, r.re), 'dl-core'], [Math.max(a, r.re), b, 'dl-over']]
+        : [[a, b, r.rostered ? 'dl-core' : 'dl-over']];
+      for (const [p, q, c] of parts) if (q > p) s += `<rect class="${c}" x="${x(p)}" y="${cy - 3}" width="${Math.max(1.5, x(q) - x(p)).toFixed(1)}" height="6" rx="2"/>`;
+    }
+  });
+  box.innerHTML = s + '</svg>';
+}
+
 function renderWeek() {
   const ws = state.weekStart;
   const keys = [...Array(7)].map((_, i) => addDays(ws, i));
@@ -598,22 +775,31 @@ function renderWeek() {
   let html = '';
   for (const r of rows) {
     const d = keyToDate(r.key);
-    const label = `${DAYS[r.wd]}<small>${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}</small>`;
+    const dayName = `${DAYS[r.wd]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+    const editing = state.editing === r.key;
+    const addBtn = r.note || editing ? '' : `<button class="note-add" type="button" data-note="${r.key}" aria-label="Add a note for ${dayName}">+ note</button>`;
+    const label = `${DAYS[r.wd]}<small>${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}</small>${addBtn}`;
+    const parts = [];
+    if (editing) parts.push(`<div class="noteedit"><input type="text" id="noteInput" maxlength="200" value="${esc(r.note)}" placeholder="e.g. family meeting ran late" aria-label="Note for ${dayName}"><button type="button" class="primary" id="noteSave">Save</button><button type="button" id="noteCancel">Cancel</button></div>`);
+    else if (r.note) parts.push(`<span class="mynote"><b>Note:</b> <button type="button" data-note="${r.key}" aria-label="Edit note for ${dayName}">${esc(r.note)}</button></span>`);
+    if (r.notes && r.notes.length) parts.push(`<span>${esc(r.notes.join(' · '))}</span>`);
+    const hasLine = parts.length > 0;
     if (!r.stints.length) {
-      html += `<tr><td class="day">${label}</td><td colspan="3" class="none">${r.rostered ? 'Not at work' : '—'}</td></tr>`;
-      continue;
+      html += `<tr class="${hasLine ? 'has-notes' : ''}"><td class="day">${label}</td><td colspan="3" class="none">${r.rostered ? 'Not at work' : '—'}</td></tr>`;
+    } else {
+      const off = !r.rostered;
+      const earlySub = r.early > 0 ? `${dur(r.early)} early` : '';
+      const overSub = r.over > 0 ? `${dur(r.over)} over` : '';
+      html += `<tr class="${off ? 'off' : ''} ${hasLine ? 'has-notes' : ''}"><td class="day">${label}</td>
+        <td>${timeCell(r.inMin, r.inEst, earlySub, r.early >= 15)}</td>
+        <td>${timeCell(r.outMin, r.outEst, overSub, r.over >= 15)}</td>
+        <td>${dur(r.onSite)}</td></tr>`;
     }
-    const off = !r.rostered;
-    const earlySub = r.early > 0 ? `${dur(r.early)} early` : '';
-    const overSub = r.over > 0 ? `${dur(r.over)} over` : '';
-    const hasNotes = r.notes.length > 0;
-    html += `<tr class="${off ? 'off' : ''} ${hasNotes ? 'has-notes' : ''}"><td class="day">${label}</td>
-      <td>${timeCell(r.inMin, r.inEst, earlySub, r.early >= 15)}</td>
-      <td>${timeCell(r.outMin, r.outEst, overSub, r.over >= 15)}</td>
-      <td>${dur(r.onSite)}</td></tr>`;
-    if (hasNotes) html += `<tr class="notes"><td></td><td colspan="3">${esc(r.notes.join(' · '))}</td></tr>`;
+    if (hasLine) html += `<tr class="notes"><td></td><td colspan="3">${parts.join('<br>')}</td></tr>`;
   }
   $('#weekTable tbody').innerHTML = html;
+  renderDayline(rows);
+  if (state.editing && $('#noteInput')) $('#noteInput').focus();
 
   const worked = rows.filter(r => r.stints.length);
   const tot = worked.reduce((t, r) => t + r.onSite, 0);
@@ -651,15 +837,20 @@ function refresh() {
 }
 
 /* ---------- tables for export ---------- */
-const HEAD = ['Date', 'Day', 'Arrived', 'Left', 'On site (h)', 'Early (min)', 'Over (min)', 'Rostered', 'Approximate', 'Sites', 'Notes'];
+const HEAD = ['Date', 'Day', 'Arrived', 'Left', 'On site (h)', 'Early (min)', 'Over (min)', 'Rostered', 'Approximate', 'Sites', 'Notes', 'My note'];
 function rowsToTable(rows) {
-  const body = rows.filter(r => r.stints.length).map(r => [
+  const body = rows.filter(r => r.stints.length || r.note).map(r => r.stints.length ? [
     r.key, DAYS[r.wd], hm(r.inMin), hm(r.outMin) + (r.outMin >= 1440 ? ' (+1)' : ''), +(r.onSite / 60).toFixed(2),
     r.early == null ? '' : Math.round(r.early), r.over == null ? '' : Math.round(r.over), r.rostered ? 'yes' : 'no',
-    [r.inEst ? 'arrival' : '', r.outEst ? 'departure' : ''].filter(Boolean).join(' + '), (r.sites || []).join(' + '), (r.notes || []).join('; ')]);
+    [r.inEst ? 'arrival' : '', r.outEst ? 'departure' : ''].filter(Boolean).join(' + '), (r.sites || []).join(' + '),
+    [...(r.notes || []), r.sharp ? 'sharpened with raw GPS' : ''].filter(Boolean).join('; '), r.note || ''
+  ] : [r.key, DAYS[r.wd], '', '', '', '', '', r.rostered ? 'yes' : 'no', '', '', r.rostered ? 'not at work' : '', r.note]);
   return [HEAD, ...body];
 }
-function allDayRows() { return [...state.days.keys()].sort().map(dayRow); }
+function allDayRows() {
+  const keys = new Set([...state.days.keys(), ...Object.keys(store.get('tos.notes', {}))]);
+  return [...keys].sort().map(dayRow);
+}
 function toCSV(t) { return t.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n'); }
 function download(name, text) {
   const a = document.createElement('a');
@@ -726,10 +917,21 @@ async function sendToSheets() {
 /* ---------- loading and saving ---------- */
 const status = (msg, err) => { const el = $('#status'); el.textContent = msg; el.classList.toggle('err', !!err); };
 
-function applyData(segs, frequent, info) {
+function homeSpots(segs, frequent) {
+  const out = [];
+  const add = loc => { if (loc && !out.some(h => distM(h, loc) < 100)) out.push(loc); };
+  (frequent || []).forEach(f => { if (/HOME/i.test(f.label || '')) add(f.loc); });
+  segs.forEach(s => { if (s.kind === 'visit' && /HOME/i.test(s.sem || '')) add(s.loc); });
+  return out;
+}
+
+function applyData(segs, frequent, raw, info) {
   state.visits = segs.filter(s => s.kind === 'visit');
   state.others = segs.filter(s => s.kind !== 'visit');
   state.frequent = frequent || [];
+  state.raw = Array.isArray(raw) ? raw : [];
+  $('#sharpenRow').hidden = !state.raw.length;
+  $('#sharpen').checked = store.get('tos.sharpen', true);
   let first = Infinity, last = 0;
   for (const v of state.visits) { if (v.s.t < first) first = v.s.t; if (v.e.t > last) last = v.e.t; }
   status(`${info} Covers ${niceEpoch(first)} to ${niceEpoch(last)}.`);
@@ -744,7 +946,7 @@ function applyData(segs, frequent, info) {
 }
 
 async function loadFiles(files) {
-  const out = { segs: [], frequent: [] };
+  const out = { segs: [], frequent: [], raw: [] };
   let bad = 0;
   for (const f of files) {
     status(`Reading ${f.name}…`);
@@ -765,10 +967,16 @@ async function loadFiles(files) {
   const keptOld = saved && Array.isArray(saved.segs) ? saved.segs.filter(s => s.e.t < freshStart) : [];
   const merged = dedupe([...keptOld, ...fresh]).sort((a, b) => a.s.t - b.s.t);
   const frequent = out.frequent.length ? out.frequent : (saved && saved.frequent) || [];
-  const ok = await idb.set('data', { segs: merged, frequent, updated: Date.now() });
+  // Raw GPS points: drop anything near home (never needed, never kept), then merge the same way.
+  const homes = homeSpots(merged, frequent);
+  const rawFresh = out.raw.filter(p => !homes.some(h => distM(h, { lat: p[1], lng: p[2] }) <= 300)).sort((a, b) => a[0] - b[0]);
+  const rawStart = rawFresh.length ? rawFresh[0][0] : Infinity;
+  const savedRaw = saved && Array.isArray(saved.raw) ? saved.raw : [];
+  const raw = savedRaw.filter(p => p[0] < rawStart).concat(rawFresh);
+  const ok = await idb.set('data', { segs: merged, frequent, raw, updated: Date.now() });
   if (ok && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   const added = keptOld.length ? ` Kept ${new Set(keptOld.map(s => keyOf(local(s.s)))).size} earlier days already saved here.` : '';
-  const hadSaved = applyData(merged, frequent, `Loaded.${added}${bad ? ` ${bad} file(s) skipped.` : ''}`);
+  const hadSaved = applyData(merged, frequent, raw, `Loaded.${added}${bad ? ` ${bad} file(s) skipped.` : ''}`);
   const target = hadSaved ? '#weekCard' : '#sitesCard';
   $('#sitesDetails').open = !hadSaved;
   $(target).scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -778,7 +986,7 @@ async function restore() {
   const saved = await idb.get('data');
   if (!saved || !Array.isArray(saved.segs) || !saved.segs.length) return;
   const d = new Date(saved.updated || Date.now());
-  applyData(saved.segs, saved.frequent, `Showing saved data (last export loaded ${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}).`);
+  applyData(saved.segs, saved.frequent, saved.raw, `Showing saved data (last export loaded ${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}).`);
   $('#sitesDetails').open = false;
 }
 
@@ -793,19 +1001,52 @@ $('#siteList').addEventListener('change', e => {
   if (e.target.type === 'text') c.label = e.target.value.trim() || `Place ${i + 1}`;
   saveSites(); renderSites(); refresh();
 });
-$('#roster').addEventListener('change', e => {
-  const i = +e.target.dataset.i, k = e.target.dataset.k; if (isNaN(i)) return;
-  const r = getRoster();
-  r[i][k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-  store.set('tos.roster', r);
-  renderRoster(); refresh();
+$('#rosterPeriods').addEventListener('change', e => {
+  const t = e.target, pi = +t.dataset.p, k = t.dataset.k; if (isNaN(pi) || !k) return;
+  const p = getRosters(); if (!p[pi]) return;
+  if (k === 'from') {
+    if (!t.value || p.some((x, j) => j !== pi && x.from === t.value)) { renderRoster(); return; }
+    p[pi].from = t.value;
+  } else p[pi].days[+t.dataset.i][k] = t.type === 'checkbox' ? t.checked : t.value;
+  saveRosters(p); renderRoster(); refresh();
 });
-$('#prev').addEventListener('click', () => { state.weekStart = addDays(state.weekStart, -7); renderWeek(); });
-$('#next').addEventListener('click', () => { state.weekStart = addDays(state.weekStart, 7); renderWeek(); });
-$('#jump').addEventListener('change', e => { if (e.target.value) { state.weekStart = mondayOf(e.target.value); renderWeek(); } });
+$('#rosterPeriods').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  const p = getRosters(); p.splice(+b.dataset.del, 1); saveRosters(p); renderRoster(); refresh();
+});
+$('#addRoster').addEventListener('click', () => {
+  const v = $('#newFrom').value; if (!v) return;
+  const p = getRosters(); if (p.some(x => x.from === v)) return;
+  p.push({ from: v, days: JSON.parse(JSON.stringify(rosterFor(v))) });
+  saveRosters(p); renderRoster(); refresh();
+});
+$('#sharpen').addEventListener('change', e => { store.set('tos.sharpen', e.target.checked); refresh(); });
+function saveNote() {
+  const k = state.editing; if (!k) return;
+  const v = ($('#noteInput').value || '').trim();
+  const n = store.get('tos.notes', {}); if (v) n[k] = v; else delete n[k];
+  store.set('tos.notes', n); state.editing = null; renderWeek();
+}
+$('#weekTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-note]');
+  if (b) { state.editing = b.dataset.note; renderWeek(); return; }
+  if (e.target.id === 'noteSave') saveNote();
+  if (e.target.id === 'noteCancel') { state.editing = null; renderWeek(); }
+});
+$('#weekTable').addEventListener('keydown', e => {
+  if (e.target.id !== 'noteInput') return;
+  if (e.key === 'Enter') { e.preventDefault(); saveNote(); }
+  if (e.key === 'Escape') { state.editing = null; renderWeek(); }
+});
+const goWeek = ws => { state.editing = null; state.weekStart = ws; renderWeek(); };
+$('#prev').addEventListener('click', () => goWeek(addDays(state.weekStart, -7)));
+$('#next').addEventListener('click', () => goWeek(addDays(state.weekStart, 7)));
+$('#jump').addEventListener('change', e => { if (e.target.value) goWeek(mondayOf(e.target.value)); });
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (state.weekRows.length) renderDayline(state.weekRows); }, 150); });
 $('#sumTable').addEventListener('click', e => {
   const tr = e.target.closest('tr[data-w]'); if (!tr) return;
-  state.weekStart = tr.dataset.w; renderWeek();
+  goWeek(tr.dataset.w);
   $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 $('#copy').addEventListener('click', e => copyText(rowsToTable(state.weekRows).map(r => r.join('\t')).join('\n'), e.currentTarget));
@@ -828,9 +1069,9 @@ $('#saveUrl').addEventListener('click', () => {
 $('#sheetUrl').addEventListener('input', e => e.target.setCustomValidity(''));
 $('#unlink').addEventListener('click', () => { store.del('tos.sheetUrl'); store.del('tos.sheetLink'); renderSheets(); $('#sheetsDetails').open = true; });
 $('#forget').addEventListener('click', async () => {
-  if (!confirm('Forget the saved location data, workplaces, roster and sheet link on this device? Your Google Sheet is not touched.')) return;
+  if (!confirm('Forget the saved location data, workplaces, rosters, notes and sheet link on this device? Your Google Sheet is not touched.')) return;
   await idb.del('data');
-  ['tos.sites', 'tos.roster', 'tos.sheetUrl', 'tos.sheetLink'].forEach(k => store.del(k));
+  ['tos.sites', 'tos.roster', 'tos.rosters', 'tos.notes', 'tos.sharpen', 'tos.sheetUrl', 'tos.sheetLink'].forEach(k => store.del(k));
   location.reload();
 });
 

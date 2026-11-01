@@ -19,7 +19,7 @@ In Chrome on the phone: ⋮ → **Add to home screen** → **Install**, or tap *
 ## Google Sheets (one-off setup, about 5 minutes)
 
 1. Make a Google Sheet called *Time on Site*.
-2. Extensions → Apps Script. Replace everything with [`apps-script.gs`](apps-script.gs) and save.
+2. Extensions → Apps Script. Replace everything with [`apps-script.gs`](apps-script.gs) and save. (If you set it up before notes were added, paste the new version and use Deploy → Manage deployments → edit → New version.)
 3. Deploy → New deployment → Web app. Execute as **Me**, Who has access **Anyone**. Deploy and allow access.
 4. Paste the Web app URL into the page's *Google Sheets link* box.
 
@@ -35,4 +35,7 @@ The location file is read inside your browser and never uploaded. The page keeps
 - Off site for under 90 minutes stays part of the same stint. A longer gap starts a new stint, such as a recall.
 - Early and over count only time on site outside the rostered start and finish.
 - A time is marked ≈ when there's no location data for 30 minutes or more beside it.
-- A new export replaces saved data from its first day onwards; earlier saved days are kept.
+- **Sharpening** (on by default when the export has raw GPS points): arrive becomes the first raw point inside the workplace and leave the last, but only when the neighbouring point outside is within 10 minutes and you stay on the same side for 10 minutes. The workplace boundary for raw points is learned from where your phone sits during visits there. Days that don't meet those rules keep Timeline's own times.
+- **Rosters** can change by date: add a new roster from a rotation's first day, and earlier weeks keep the old one.
+- **Notes** you add to a day are saved on the device and sent to the sheet in a *My note* column. Keep patient details out.
+- A new export replaces saved data from its first day onwards; earlier saved days are kept. Raw GPS points near home are never kept.
