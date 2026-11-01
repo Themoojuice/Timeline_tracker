@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Time on Site</title>
 <meta name="description" content="Daily arrive and leave times at work, read from your Google Timeline export. Runs entirely in your browser; nothing is uploaded.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%230f766e' stroke-width='3'/%3E%3Cpath d='M16 9v7l5 3' fill='none' stroke='%230f766e' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
 :root {
   --bg: #f5f4f0; --card: #ffffff; --ink: #1d1d1b; --muted: #6a6a64; --line: #e3e1da;
@@ -32,6 +35,8 @@ body {
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; align-items: flex-start; gap: 12px; }
+header .grow { flex: 1; }
 header h1 { font-size: 28px; line-height: 1.15; margin: 8px 0 6px; letter-spacing: -0.01em; }
 .lede { margin: 0 0 20px; color: var(--muted); }
 .card {
@@ -47,31 +52,34 @@ details[open] > summary::after { content: "Hide"; }
 .sum-note { color: var(--muted); font-size: 14px; }
 .hint { color: var(--muted); font-size: 14px; margin: 10px 0 12px; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
-button, .file {
+button, .file, a.btn {
   font: inherit; font-size: 15px; border-radius: 10px; border: 1px solid var(--line);
   background: var(--card); color: var(--ink); padding: 10px 14px; cursor: pointer; min-height: 44px;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
-button:hover, .file:hover { border-color: var(--accent); }
-button:focus-visible, .file:focus-within, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button:hover, .file:hover, a.btn:hover { border-color: var(--accent); }
+button:focus-visible, .file:focus-within, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.primary { background: var(--accent) !important; color: var(--accent-ink) !important; border-color: var(--accent) !important; font-weight: 600; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
-.file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; }
+.file { position: relative; max-width: 100%; }
+.file.big { width: 100%; min-height: 52px; font-size: 16px; }
 .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status { margin: 12px 0 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
 .status.err { color: var(--warn); }
+.status a { color: var(--accent); font-weight: 600; }
 .help { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
 .help summary { font-size: 14px; color: var(--ink); }
 .help ol { margin: 10px 0 0; padding-left: 20px; font-size: 14px; }
 .help p { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+#install { margin-top: 8px; flex: none; }
 
 /* workplaces */
 .sites { list-style: none; margin: 0; padding: 0; }
 .sites li { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
 .sites li:first-child { border-top: 0; }
 .sites input[type=checkbox] { width: 22px; height: 22px; margin: 6px 0 0; accent-color: var(--accent); }
-.sites input[type=text] {
-  font: inherit; font-size: 15px; width: 100%; padding: 6px 8px; border-radius: 8px;
+input[type=text], input[type=url] {
+  font: inherit; font-size: 15px; width: 100%; padding: 8px 10px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--bg); color: var(--ink);
 }
 .sites .meta { grid-column: 2; font-size: 13px; color: var(--muted); }
@@ -111,13 +119,18 @@ tr.has-notes td { border-bottom: 0; }
 tr.off td.day::after { content: "day off"; display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); vertical-align: 2px; }
 .none { color: var(--muted); }
 .est { color: var(--warn); }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-.actions button { flex: 1 1 auto; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.actions .wide { grid-column: 1 / -1; }
 #sumTable tbody tr { cursor: pointer; }
 #sumTable tbody tr:hover td { background: var(--accent-soft); }
 .legend { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.setup ol { padding-left: 20px; margin: 10px 0; font-size: 15px; }
+.setup li { margin-bottom: 8px; }
+.setup li b { font-weight: 600; }
+.linked { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 footer { color: var(--muted); font-size: 13px; margin-top: 24px; }
-footer a { color: var(--accent); }
+footer a, footer button.link { color: var(--accent); }
+button.link { background: none; border: 0; padding: 0; min-height: 0; font-size: 13px; text-decoration: underline; cursor: pointer; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 420px) {
   td, th { padding-left: 4px; padding-right: 4px; }
@@ -129,18 +142,20 @@ footer a { color: var(--accent); }
 <body>
 <main>
   <header>
-    <h1>Time on Site</h1>
-    <p class="lede">When you got to work and when you left, read from your Google Timeline. The file is read on this device and never uploaded.</p>
+    <div class="grow">
+      <h1>Time on Site</h1>
+      <p class="lede">When you got to work and when you left, read from your Google Timeline. Your location file is read on this device and never uploaded.</p>
+    </div>
+    <button id="install" hidden>Install app</button>
   </header>
 
   <section class="card" aria-labelledby="loadTitle">
     <h2 id="loadTitle"><span class="step">1</span>Load your Timeline</h2>
     <div class="row">
-      <label class="file" id="fileBtn">
+      <label class="file big primary" id="fileBtn">
         <input type="file" id="file" accept=".json,application/json" multiple>
-        <span id="fileLabel">Choose Timeline.json</span>
+        <span id="fileLabel">Load Timeline export</span>
       </label>
-      <button class="primary" id="analyse" disabled>Analyse</button>
     </div>
     <p id="status" class="status" role="status" aria-live="polite"></p>
     <details class="help">
@@ -148,9 +163,9 @@ footer a { color: var(--accent); }
       <ol>
         <li>On your phone: Settings → Location → Location services → Timeline.</li>
         <li>Tap <b>Export Timeline data</b> and save the file.</li>
-        <li>Come back here, choose the file, press <b>Analyse</b>.</li>
+        <li>Come back here and tap <b>Load Timeline export</b>. The newest file is usually at the top of the list.</li>
       </ol>
-      <p>Each export holds your whole history, so once a week is plenty. If the menu differs on your phone, try Google Maps → your picture → Your Timeline → ⋮ → Location and privacy settings.</p>
+      <p>Each export holds your whole history, so once a week is plenty. This page also keeps what it has seen on this device, so weeks stay here even after Google drops them from your phone.</p>
     </details>
   </section>
 
@@ -187,10 +202,38 @@ footer a { color: var(--accent); }
     </table>
     <p class="legend">Times are Google's best estimate of when you arrived and left. <span class="est">≈</span> marks a time next to a gap in location data, so treat it as approximate.</p>
     <div class="actions">
+      <button class="primary wide" id="toSheets">Send to Google Sheets</button>
       <button id="copy">Copy week</button>
-      <button id="csvWeek">CSV, this week</button>
       <button id="csvAll">CSV, all days</button>
     </div>
+    <p id="sheetStatus" class="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card" id="sheetsCard" hidden>
+    <details id="sheetsDetails">
+      <summary><h2>Google Sheets link</h2><span class="sum-note" id="sheetsNote">not set up</span></summary>
+      <div id="sheetsSetup" class="setup">
+        <p class="hint">One-off, about 5 minutes, easiest on a laptop. After that, "Send to Google Sheets" updates the same sheet every time: a tab for the week you're viewing, one with every day, and a weekly summary.</p>
+        <ol>
+          <li>Make a new Google Sheet and name it <b>Time on Site</b>.</li>
+          <li>In the sheet: <b>Extensions → Apps Script</b>. Delete what's there, paste the script, and save. <button id="copyScript" type="button">Copy script</button></li>
+          <li><b>Deploy → New deployment</b>. Click the gear, pick <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. Deploy.</li>
+          <li>Google will warn that the app isn't verified, because it's your own script. Click <b>Advanced → Go to … (unsafe) → Allow</b>.</li>
+          <li>Copy the <b>Web app URL</b>, send it to your phone, and paste it here.</li>
+        </ol>
+        <label class="sr" for="sheetUrl">Web app URL</label>
+        <input type="url" id="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+        <div class="row"><button id="saveUrl" class="primary" type="button">Save link</button></div>
+        <p class="hint">Keep the link private: anyone who has it can write to that sheet, though not read it.</p>
+      </div>
+      <div id="sheetsLinked" hidden>
+        <p class="hint">Linked. "Send to Google Sheets" adds new days and updates changed ones; it never deletes days already in the sheet.</p>
+        <div class="linked">
+          <a class="btn" id="openSheet" target="_blank" rel="noopener" hidden>Open sheet</a>
+          <button id="unlink" type="button">Change link</button>
+        </div>
+      </div>
+    </details>
   </section>
 
   <section class="card" id="sumCard" hidden>
@@ -205,7 +248,9 @@ footer a { color: var(--accent); }
   </section>
 
   <footer>
-    <p>Reads the Timeline export from Android or iPhone, and older Google Takeout location files. Nothing leaves your browser: there is no server.</p>
+    <p>Reads the Timeline export from Android or iPhone, and older Google Takeout location files. The location file never leaves your browser. "Send to Google Sheets" sends only the daily times in the table, to your own sheet.</p>
+    <p id="installHint">To put it on your home screen: in Chrome, tap ⋮ → <b>Add to home screen</b> → <b>Install</b>.</p>
+    <p><button class="link" id="forget" type="button">Forget the data saved on this device</button></p>
   </footer>
 </main>
 
@@ -226,10 +271,33 @@ const $ = s => document.querySelector(s);
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
 };
 
-const state = { visits: [], others: [], clusters: [], days: new Map(), weekStart: null, maxKey: null, minKey: null };
+// Saved location segments live in IndexedDB (too big for localStorage over months).
+const idb = {
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('time-on-site', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  },
+  async get(k) {
+    try { const db = await this.open(); return await new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+    catch (e) { return null; }
+  },
+  async set(k, v) {
+    try { const db = await this.open(); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); return true; }
+    catch (e) { return false; }
+  },
+  async del(k) {
+    try { const db = await this.open(); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); } catch (e) { /* ignore */ }
+  }
+};
+
+const state = { visits: [], others: [], frequent: [], clusters: [], days: new Map(), weekStart: null, maxKey: null, minKey: null, weekRows: [] };
 
 /* ---------- small helpers ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -243,6 +311,7 @@ function distM(a, b) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function overlap(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
 
 function parseLatLng(v) {
   if (v == null) return null;
@@ -279,7 +348,8 @@ function dateToKey(d) { return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)
 function addDays(k, n) { const d = keyToDate(k); d.setUTCDate(d.getUTCDate() + n); return dateToKey(d); }
 function mondayOf(k) { const d = keyToDate(k); const wd = (d.getUTCDay() + 6) % 7; return addDays(k, -wd); }
 function nice(k, withYear) { const d = keyToDate(k); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}${withYear ? ' ' + d.getUTCFullYear() : ''}`; }
-// minutes from local midnight of day key k (offset off) to time point tp
+function niceEpoch(t) { const d = new Date(t); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
+// whole minutes from local midnight of day key k (in the time point's offset) to time point tp
 function minsFromMidnight(k, tp) { const d = keyToDate(k); return Math.floor((tp.t - (d.getTime() - tp.off * 60000)) / 60000); }
 
 /* ---------- reading the export ---------- */
@@ -297,7 +367,6 @@ function fromAndroid(seg) {
   if (seg.activity) return { kind: 'move', s, e };
   return null; // timelinePath and memories are not used
 }
-function fromIos(seg) { return fromAndroid(seg); }
 function fromTakeout(o) {
   const pv = o.placeVisit, as = o.activitySegment;
   const x = pv || as;
@@ -315,7 +384,7 @@ function fromTakeout(o) {
 
 function ingest(json, out) {
   let segs = [];
-  if (Array.isArray(json)) segs = json.map(fromIos);
+  if (Array.isArray(json)) segs = json.map(fromAndroid);
   else if (json && Array.isArray(json.semanticSegments)) {
     segs = json.semanticSegments.map(fromAndroid);
     const fp = json.userLocationProfile && json.userLocationProfile.frequentPlaces;
@@ -326,10 +395,10 @@ function ingest(json, out) {
   for (const s of segs) if (s) out.segs.push(s);
   return true;
 }
+const segKey = s => `${s.kind}|${s.s.t}|${s.e.t}|${s.pid || ''}|${s.level || 0}`;
+function dedupe(segs) { const seen = new Set(), out = []; for (const s of segs) { const k = segKey(s); if (!seen.has(k)) { seen.add(k); out.push(s); } } return out; }
 
 /* ---------- workplaces ---------- */
-function overlap(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
-
 function buildClusters(visits, frequent) {
   const places = new Map();
   for (const v of visits) {
@@ -369,7 +438,7 @@ function buildClusters(visits, frequent) {
 function applySaved(clusters) {
   const saved = store.get('tos.sites', []);
   let anySaved = false;
-  clusters.forEach((c, i) => {
+  clusters.forEach(c => {
     const s = saved.find(s => distM(s, c) <= CLUSTER_M);
     if (s) { c.on = !!s.on; c.label = s.name || ''; anySaved = true; }
     else { c.on = c.isWorkGuess; c.label = c.names[0] || (c.isWorkGuess ? 'Work' : ''); }
@@ -390,7 +459,7 @@ function saveSites() {
 
 function renderSites() {
   const ul = $('#siteList');
-  if (!state.clusters.length) { ul.innerHTML = '<li><span></span><span class="none">No regular weekday places found in this file.</span></li>'; }
+  if (!state.clusters.length) { ul.innerHTML = '<li><span></span><span class="none">No regular weekday places found yet.</span></li>'; }
   else ul.innerHTML = state.clusters.map((c, i) => {
     const from = new Date(c.first), to = new Date(c.last);
     const span = `${MONTHS[from.getMonth()]} ${from.getFullYear()} – ${MONTHS[to.getMonth()]} ${to.getFullYear()}`;
@@ -415,8 +484,8 @@ function renderRoster() {
   const r = getRoster();
   $('#roster').innerHTML = '<span class="hdr">Day</span><span class="hdr">Start</span><span class="hdr">Finish</span>' +
     r.map((x, i) => `<label><input type="checkbox" data-i="${i}" data-k="on" ${x.on ? 'checked' : ''}>${DAYS[i]}</label>
-      <input type="time" data-i="${i}" data-k="start" value="${esc(x.start)}" aria-label="${DAYS[i]} start" ${x.on ? '' : 'disabled'}>
-      <input type="time" data-i="${i}" data-k="end" value="${esc(x.end)}" aria-label="${DAYS[i]} finish" ${x.on ? '' : 'disabled'}>`).join('');
+      <input type="time" data-i="${i}" data-k="start" value="${esc(x.start || '')}" aria-label="${DAYS[i]} start" ${x.on ? '' : 'disabled'}>
+      <input type="time" data-i="${i}" data-k="end" value="${esc(x.end || '')}" aria-label="${DAYS[i]} finish" ${x.on ? '' : 'disabled'}>`).join('');
   const on = r.map((x, i) => x.on ? DAYS[i] : null).filter(Boolean);
   const t = r.find(x => x.on && x.start && x.end);
   $('#rosterNote').textContent = on.length ? `${on.length === 5 && on[0] === 'Mon' && on[4] === 'Fri' ? 'Mon–Fri' : on.join(', ')}${t ? `, ${t.start}–${t.end}` : ''}` : 'none';
@@ -456,7 +525,6 @@ function computeDays() {
     } else stints.push({ s: w.s, e: w.e, sites: new Set([w.site.label]), gaps: [], lastSite: w.site, minProb: w.prob });
   }
   for (const st of stints) {
-    // gap in location data just before arrival / just after departure
     const i = lowerBound(otherEnds, st.s.t + 60001) - 1;
     st.before = i >= 0 ? Math.max(0, (st.s.t - otherEnds[i]) / 60000) : Infinity;
     const j = lowerBound(otherStarts, st.e.t - 60000);
@@ -506,6 +574,7 @@ function dayRow(k) {
   if (last.dataEnds) notes.push('location data ends here: export again later for the finish time');
   else if (row.outEst) notes.push(`no location data${gapText(last.after)} after leaving`);
   if (stints.some(s => s.minProb < 0.5)) notes.push('Google was unsure of the place');
+  row.sites = [...allSites];
   row.notes = notes;
   return row;
 }
@@ -557,15 +626,18 @@ function renderWeek() {
   state.weekRows = rows;
 }
 
-function renderSummary() {
+function weekSummaries() {
   const weeks = new Map();
   for (const k of state.days.keys()) {
     const w = mondayOf(k);
-    if (!weeks.has(w)) weeks.set(w, { days: 0, on: 0, over: 0 });
+    if (!weeks.has(w)) weeks.set(w, { days: 0, on: 0, over: 0, early: 0 });
     const r = dayRow(k), x = weeks.get(w);
-    x.days++; x.on += r.onSite; x.over += r.over || 0;
+    x.days++; x.on += r.onSite; x.over += r.over || 0; x.early += r.early || 0;
   }
-  const list = [...weeks.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  return [...weeks.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+}
+function renderSummary() {
+  const list = weekSummaries();
   $('#sumTable tbody').innerHTML = list.map(([w, x]) =>
     `<tr data-w="${w}"><td>${nice(w, true)}</td><td>${x.days}</td><td>${dur(x.on)}</td><td>${x.over ? dur(x.over) : '—'}</td></tr>`).join('');
   $('#sumNote').textContent = `${list.length} week${list.length === 1 ? '' : 's'}`;
@@ -578,15 +650,16 @@ function refresh() {
   renderSummary();
 }
 
-/* ---------- export ---------- */
+/* ---------- tables for export ---------- */
+const HEAD = ['Date', 'Day', 'Arrived', 'Left', 'On site (h)', 'Early (min)', 'Over (min)', 'Rostered', 'Approximate', 'Sites', 'Notes'];
 function rowsToTable(rows) {
-  const head = ['date', 'day', 'arrived', 'left', 'on_site_hours', 'early_min', 'over_min', 'rostered', 'approximate', 'notes'];
   const body = rows.filter(r => r.stints.length).map(r => [
-    r.key, DAYS[r.wd], hm(r.inMin), hm(r.outMin) + (r.outMin >= 1440 ? ' (+1)' : ''), (r.onSite / 60).toFixed(2),
+    r.key, DAYS[r.wd], hm(r.inMin), hm(r.outMin) + (r.outMin >= 1440 ? ' (+1)' : ''), +(r.onSite / 60).toFixed(2),
     r.early == null ? '' : Math.round(r.early), r.over == null ? '' : Math.round(r.over), r.rostered ? 'yes' : 'no',
-    [r.inEst ? 'arrival' : '', r.outEst ? 'departure' : ''].filter(Boolean).join('+'), (r.notes || []).join('; ')]);
-  return [head, ...body];
+    [r.inEst ? 'arrival' : '', r.outEst ? 'departure' : ''].filter(Boolean).join(' + '), (r.sites || []).join(' + '), (r.notes || []).join('; ')]);
+  return [HEAD, ...body];
 }
+function allDayRows() { return [...state.days.keys()].sort().map(dayRow); }
 function toCSV(t) { return t.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n'); }
 function download(name, text) {
   const a = document.createElement('a');
@@ -605,20 +678,72 @@ async function copyText(text, btn) {
   setTimeout(() => { btn.textContent = old; }, 1500);
 }
 
-/* ---------- wiring ---------- */
+/* ---------- Google Sheets ---------- */
+const SCRIPT_URL_RE = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\/?$/;
+function renderSheets() {
+  const url = store.get('tos.sheetUrl', '');
+  const link = store.get('tos.sheetLink', '');
+  $('#sheetsSetup').hidden = !!url;
+  $('#sheetsLinked').hidden = !url;
+  $('#sheetsNote').textContent = url ? 'linked' : 'not set up';
+  $('#openSheet').hidden = !link;
+  if (link) $('#openSheet').href = link;
+  $('#toSheets').textContent = url ? 'Send to Google Sheets' : 'Set up Google Sheets';
+}
+function sheetPayload() {
+  return {
+    app: 'time-on-site', v: 1, sent: new Date().toISOString(),
+    week: { start: state.weekStart, rows: rowsToTable(state.weekRows) },
+    days: rowsToTable(allDayRows())
+  };
+}
+async function sendToSheets() {
+  const url = store.get('tos.sheetUrl', '');
+  const msg = (html, err) => { const el = $('#sheetStatus'); el.innerHTML = html; el.classList.toggle('err', !!err); };
+  if (!url) { $('#sheetsCard').hidden = false; $('#sheetsDetails').open = true; $('#sheetsCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const btn = $('#toSheets'); btn.disabled = true; msg('Sending…');
+  const body = JSON.stringify(sheetPayload());
+  const n = state.days.size;
+  try {
+    const res = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'The sheet script reported an error');
+    if (j.url) store.set('tos.sheetLink', j.url);
+    renderSheets();
+    msg(`Sent ${n} day${n === 1 ? '' : 's'}; the sheet now holds ${j.days} day${j.days === 1 ? '' : 's'}. ${j.url ? `<a href="${esc(j.url)}" target="_blank" rel="noopener">Open sheet</a>` : ''}`);
+  } catch (err) {
+    if (err && /script reported/.test(err.message)) { msg(esc(err.message), true); btn.disabled = false; return; }
+    try {
+      // Some browsers block reading Google's reply; send blind and let the sheet confirm.
+      await fetch(url, { method: 'POST', body, mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+      const link = store.get('tos.sheetLink', '');
+      msg(`Sent ${n} days, but Google didn't confirm. Check the sheet. ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">Open sheet</a>` : ''}`);
+    } catch (e2) { msg("Couldn't reach Google. Check you're online, then try again.", true); }
+  }
+  btn.disabled = false;
+}
+
+/* ---------- loading and saving ---------- */
 const status = (msg, err) => { const el = $('#status'); el.textContent = msg; el.classList.toggle('err', !!err); };
 
-$('#file').addEventListener('change', e => {
-  const files = [...e.target.files];
-  $('#fileLabel').textContent = files.length ? (files.length === 1 ? files[0].name : `${files.length} files`) : 'Choose Timeline.json';
-  $('#analyse').disabled = !files.length;
-  status(files.length ? `${(files.reduce((t, f) => t + f.size, 0) / 1048576).toFixed(1)} MB ready. Press Analyse.` : '');
-});
+function applyData(segs, frequent, info) {
+  state.visits = segs.filter(s => s.kind === 'visit');
+  state.others = segs.filter(s => s.kind !== 'visit');
+  state.frequent = frequent || [];
+  let first = Infinity, last = 0;
+  for (const v of state.visits) { if (v.s.t < first) first = v.s.t; if (v.e.t > last) last = v.e.t; }
+  status(`${info} Covers ${niceEpoch(first)} to ${niceEpoch(last)}.`);
+  state.clusters = buildClusters(state.visits, state.frequent);
+  const hadSaved = applySaved(state.clusters);
+  saveSites();
+  renderSites(); renderRoster(); renderSheets();
+  ['#sitesCard', '#rosterCard', '#weekCard', '#sheetsCard', '#sumCard'].forEach(s => { $(s).hidden = false; });
+  state.weekStart = null;
+  refresh();
+  return hadSaved;
+}
 
-$('#analyse').addEventListener('click', async () => {
-  const files = [...$('#file').files];
-  if (!files.length) return;
-  $('#analyse').disabled = true;
+async function loadFiles(files) {
   const out = { segs: [], frequent: [] };
   let bad = 0;
   for (const f of files) {
@@ -627,32 +752,41 @@ $('#analyse').addEventListener('click', async () => {
     try { if (!ingest(JSON.parse(await f.text()), out)) bad++; }
     catch (err) { bad++; }
   }
-  $('#analyse').disabled = false;
-  // de-duplicate (several exports may overlap)
-  const seen = new Set(), segs = [];
-  for (const s of out.segs) { const k = `${s.kind}|${s.s.t}|${s.e.t}|${s.pid || ''}|${s.level || 0}`; if (!seen.has(k)) { seen.add(k); segs.push(s); } }
-  state.visits = segs.filter(s => s.kind === 'visit');
-  state.others = segs.filter(s => s.kind !== 'visit');
-  if (!state.visits.length) {
+  const fresh = dedupe(out.segs);
+  if (!fresh.some(s => s.kind === 'visit')) {
     status(bad ? "That doesn't look like a Timeline export. Use the file from Settings → Location → Timeline → Export Timeline data." : 'No visits found in this file.', true);
     return;
   }
-  let first = Infinity, last = 0;
-  for (const v of state.visits) { if (v.s.t < first) first = v.s.t; if (v.e.t > last) last = v.e.t; }
-  const f = new Date(first), l = new Date(last);
-  status(`${state.visits.length.toLocaleString()} visits, ${f.getDate()} ${MONTHS[f.getMonth()]} ${f.getFullYear()} to ${l.getDate()} ${MONTHS[l.getMonth()]} ${l.getFullYear()}.${bad ? ` ${bad} file(s) skipped.` : ''}`);
-  state.clusters = buildClusters(state.visits, out.frequent);
-  const hadSaved = applySaved(state.clusters);
-  saveSites();
-  renderSites(); renderRoster();
+  // Merge with what this device already holds: the new export wins wherever it has data,
+  // and older saved days are kept so history outlives the phone's own Timeline.
+  let freshStart = Infinity;
+  for (const s of fresh) if (s.s.t < freshStart) freshStart = s.s.t;
+  const saved = await idb.get('data');
+  const keptOld = saved && Array.isArray(saved.segs) ? saved.segs.filter(s => s.e.t < freshStart) : [];
+  const merged = dedupe([...keptOld, ...fresh]).sort((a, b) => a.s.t - b.s.t);
+  const frequent = out.frequent.length ? out.frequent : (saved && saved.frequent) || [];
+  const ok = await idb.set('data', { segs: merged, frequent, updated: Date.now() });
+  if (ok && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  const added = keptOld.length ? ` Kept ${new Set(keptOld.map(s => keyOf(local(s.s)))).size} earlier days already saved here.` : '';
+  const hadSaved = applyData(merged, frequent, `Loaded.${added}${bad ? ` ${bad} file(s) skipped.` : ''}`);
+  const target = hadSaved ? '#weekCard' : '#sitesCard';
   $('#sitesDetails').open = !hadSaved;
-  ['#sitesCard', '#rosterCard', '#weekCard', '#sumCard'].forEach(s => { $(s).hidden = false; });
-  state.weekStart = null;
-  refresh();
-  if (!hadSaved) $('#sitesCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  else $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+  $(target).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
+async function restore() {
+  const saved = await idb.get('data');
+  if (!saved || !Array.isArray(saved.segs) || !saved.segs.length) return;
+  const d = new Date(saved.updated || Date.now());
+  applyData(saved.segs, saved.frequent, `Showing saved data (last export loaded ${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}).`);
+  $('#sitesDetails').open = false;
+}
+
+/* ---------- wiring ---------- */
+$('#file').addEventListener('change', e => {
+  const files = [...e.target.files];
+  if (files.length) loadFiles(files).finally(() => { e.target.value = ''; });
+});
 $('#siteList').addEventListener('change', e => {
   const i = +e.target.dataset.i; const c = state.clusters[i]; if (!c) return;
   if (e.target.type === 'checkbox') c.on = e.target.checked;
@@ -675,11 +809,48 @@ $('#sumTable').addEventListener('click', e => {
   $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 $('#copy').addEventListener('click', e => copyText(rowsToTable(state.weekRows).map(r => r.join('\t')).join('\n'), e.currentTarget));
-$('#csvWeek').addEventListener('click', () => download(`time-on-site_${state.weekStart}.csv`, toCSV(rowsToTable(state.weekRows))));
-$('#csvAll').addEventListener('click', () => {
-  const keys = [...state.days.keys()].sort();
-  download('time-on-site_all.csv', toCSV(rowsToTable(keys.map(dayRow))));
+$('#csvAll').addEventListener('click', () => download('time-on-site_all.csv', toCSV(rowsToTable(allDayRows()))));
+$('#toSheets').addEventListener('click', sendToSheets);
+$('#copyScript').addEventListener('click', async e => {
+  const btn = e.currentTarget;
+  try { const res = await fetch('apps-script.gs', { cache: 'no-cache' }); copyText(await res.text(), btn); }
+  catch (err) { btn.textContent = 'Open apps-script.gs in the repo'; }
 });
+$('#saveUrl').addEventListener('click', () => {
+  const v = $('#sheetUrl').value.trim();
+  if (!SCRIPT_URL_RE.test(v)) { $('#sheetUrl').setCustomValidity('Paste the Web app URL ending in /exec'); $('#sheetUrl').reportValidity(); return; }
+  $('#sheetUrl').setCustomValidity('');
+  store.set('tos.sheetUrl', v); store.del('tos.sheetLink');
+  renderSheets();
+  $('#sheetStatus').textContent = 'Linked. Tap "Send to Google Sheets".';
+  $('#weekCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+$('#sheetUrl').addEventListener('input', e => e.target.setCustomValidity(''));
+$('#unlink').addEventListener('click', () => { store.del('tos.sheetUrl'); store.del('tos.sheetLink'); renderSheets(); $('#sheetsDetails').open = true; });
+$('#forget').addEventListener('click', async () => {
+  if (!confirm('Forget the saved location data, workplaces, roster and sheet link on this device? Your Google Sheet is not touched.')) return;
+  await idb.del('data');
+  ['tos.sites', 'tos.roster', 'tos.sheetUrl', 'tos.sheetLink'].forEach(k => store.del(k));
+  location.reload();
+});
+
+/* ---------- install as an app ---------- */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('#install').hidden = false; });
+$('#install').addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => null);
+  installPrompt = null; $('#install').hidden = true;
+});
+window.addEventListener('appinstalled', () => { $('#install').hidden = true; $('#installHint').hidden = true; });
+if (window.matchMedia('(display-mode: standalone)').matches) $('#installHint').hidden = true;
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+renderSheets();
+restore();
 </script>
 </body>
 </html>
