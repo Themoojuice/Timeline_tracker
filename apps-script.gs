@@ -8,6 +8,7 @@
  *
  * Tabs it keeps up to date:
  *   This week  – the week you were viewing when you pressed Send
+ *   AVAC       – that week's ticked lines in the paper form's column order, ready to copy across
  *   All days   – every day ever sent; new days are added, changed days updated, nothing deleted
  *   Weeks      – one row per week, worked out from All days
  */
@@ -24,6 +25,7 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var all = upsertDays_(ss, data.days);
     writeTable_(ss, 'This week', data.week.rows, true);
+    if (data.avac) writeTable_(ss, 'AVAC', data.avac, 'all');
     writeTable_(ss, 'Weeks', weeksFrom_(all), false);
     tidyTabs_(ss);
     return json_({ ok: true, url: ss.getUrl(), days: all.length - 1 });
@@ -90,7 +92,7 @@ function writeTable_(ss, name, table, isDayTable) {
     return o;
   });
   // Plain-text formats first, so dates and times arrive exactly as sent.
-  var textCols = isDayTable ? DAY_TEXT_COLUMNS : [1];
+  var textCols = isDayTable === 'all' ? rows[0].map(function (_, i) { return i + 1; }) : isDayTable ? DAY_TEXT_COLUMNS : [1];
   textCols.forEach(function (c) { if (c <= w) sh.getRange(1, c, rows.length, 1).setNumberFormat('@'); });
   sh.getRange(1, 1, rows.length, w).setValues(rows);
   sh.getRange(1, 1, 1, w).setFontWeight('bold');
@@ -99,9 +101,9 @@ function writeTable_(ss, name, table, isDayTable) {
 }
 
 function tidyTabs_(ss) {
-  ['This week', 'All days', 'Weeks'].forEach(function (name, i) {
+  ['This week', 'AVAC', 'All days', 'Weeks'].forEach(function (name, i) {
     var sh = ss.getSheetByName(name);
-    if (sh) { ss.setActiveSheet(sh); ss.moveActiveSheet(i + 1); }
+    if (sh) { ss.setActiveSheet(sh); ss.moveActiveSheet(Math.min(i + 1, ss.getSheets().length)); }
   });
   var blank = ss.getSheetByName('Sheet1');
   if (blank && blank.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(blank);

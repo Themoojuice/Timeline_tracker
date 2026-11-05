@@ -124,6 +124,50 @@ button.note-add { background: none; border: 0; padding: 4px 0 0; min-height: 0; 
 .noteedit { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
 .noteedit input { flex: 1 1 180px; }
 .noteedit button { min-height: 38px; padding: 6px 12px; font-size: 14px; }
+/* AVAC view */
+.avac-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.avac-fixed { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 10px; font-size: 14px; }
+.avac-fixed span small { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.avac-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 4px; }
+.swipe-hint { display: none; font-size: 12px; color: var(--muted); margin: 0 0 4px; text-align: right; }
+@media (max-width: 640px) { .swipe-hint { display: block; } }
+@media print { .swipe-hint { display: none !important; } }
+#avacTable { min-width: 560px; border-collapse: collapse; }
+#avacTable.full { min-width: 1040px; }
+#avacTable th, #avacTable td { border: 1px solid var(--line); padding: 6px 5px; font-size: 14px; text-align: center; vertical-align: middle; }
+#avacTable th { font-size: 11px; line-height: 1.25; text-transform: none; letter-spacing: 0; color: var(--muted); background: var(--bg); }
+#avacTable td.c { text-align: left; min-width: 130px; }
+#avacTable tr.unused td { color: var(--muted); opacity: 0.55; }
+#avacTable tr.formbreak td { background: var(--accent-soft); font-size: 12px; font-weight: 600; text-align: left; color: var(--ink); }
+#avacTable .ln { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+#avacTable .ln input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+#avacTable .ln span { min-width: 1.2em; font-weight: 600; }
+#avacTable select { font: inherit; font-size: 13px; padding: 3px 2px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+#avacTable .ot { white-space: nowrap; }
+#avacTable .ot b { font-variant-numeric: tabular-nums; margin-left: 4px; }
+#avacTable .ptype { display: none; }
+.avac-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-top: 10px; }
+.avac-settings label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.avac-settings label.wide { grid-column: 1 / -1; }
+.avac-settings label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; }
+.avac-settings label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.avac-settings input[type=number], .avac-settings select {
+  font: inherit; font-size: 15px; width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body.printing { background: #fff; color: #000; }
+  body.printing main { max-width: none; padding: 0; }
+  body.printing main > *:not(#avacCard) { display: none !important; }
+  body.printing #avacCard { border: 0; padding: 0; margin: 0; background: #fff; }
+  body.printing #avacCard .hint, body.printing #avacCard .actions, body.printing #avacDetails, body.printing #avacEmpty { display: none !important; }
+  body.printing #avacTable { min-width: 0; width: 100%; }
+  body.printing #avacTable th, body.printing #avacTable td { border: 1px solid #000; color: #000; background: #fff; font-size: 11pt; padding: 5px 4px; }
+  body.printing #avacTable tr.unused { display: none; }
+  body.printing #avacTable .ln input, body.printing #avacTable select { display: none; }
+  body.printing #avacTable .ptype { display: inline; }
+  body.printing .avac-fixed, body.printing .avac-fixed small, body.printing h2, body.printing .sum-note { color: #000; }
+}
 .sharpen { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 8px; }
 .sharpen input { width: 18px; height: 18px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
 
@@ -253,6 +297,40 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; font-size:
     <p id="sheetStatus" class="status" role="status" aria-live="polite"></p>
   </section>
 
+  <section class="card" id="avacCard" hidden aria-labelledby="avacTitle">
+    <div class="avac-head"><h2 id="avacTitle">AVAC lines</h2><span class="sum-note" id="avacWeek"></span></div>
+    <p class="hint">Same columns, order and formats as the paper Attendance Variation and Allowance Claim. Ticked lines are numbered as they'd go on the form, ten to a sheet; untick any you won't claim.</p>
+    <div class="avac-fixed" id="avacFixed"></div>
+    <p class="swipe-hint">Swipe the table sideways for the rest of the columns →</p>
+    <div class="avac-scroll"><table id="avacTable"><thead></thead><tbody></tbody></table></div>
+    <p class="hint" id="avacEmpty" hidden>No lines this week at your current settings.</p>
+    <div class="actions">
+      <button id="avacCopy" type="button">Copy lines</button>
+      <button id="avacPrint" type="button">Print</button>
+    </div>
+    <details id="avacDetails" class="help">
+      <summary>Form details and rules</summary>
+      <div class="avac-settings">
+        <label>Personnel assignment number<input type="text" data-a="pan" autocomplete="off"></label>
+        <label>Employee name<input type="text" data-a="name" autocomplete="name"></label>
+        <label>Pay level<input type="text" data-a="level" autocomplete="off"></label>
+        <label>Cost centre (only if overriding)<input type="text" data-a="cc" autocomplete="off"></label>
+        <label>Organisational unit no.<input type="text" data-a="ouNo" autocomplete="off"></label>
+        <label>Organisational unit name<input type="text" data-a="ouName" autocomplete="off"></label>
+        <label class="wide">Location<input type="text" data-a="location" autocomplete="off"></label>
+        <label class="wide">Comment on every line<input type="text" data-a="comment" placeholder="e.g. internal order number" autocomplete="off"></label>
+        <label>Meal break (minutes)<input type="number" data-a="meal" min="0" step="5" placeholder="blank"></label>
+        <label>Shortest overtime to list (min)<input type="number" data-a="minOver" min="0" step="5"></label>
+        <label class="wide">Round actual times to the nearest
+          <select data-a="round"><option value="0">Minute (exact)</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option></select>
+        </label>
+        <label class="check wide"><input type="checkbox" data-a="countEarly">Count arriving before rostered start as overtime</label>
+        <label class="check wide"><input type="checkbox" data-a="full">Show every form column (personnel number, name, pay level, cost centre, initials)</label>
+      </div>
+      <p class="hint">Saved on this device only. Your day notes are added to Comments.</p>
+    </details>
+  </section>
+
   <section class="card" id="sheetsCard" hidden>
     <details id="sheetsDetails">
       <summary><h2>Google Sheets link</h2><span class="sum-note" id="sheetsNote">not set up</span></summary>
@@ -292,7 +370,7 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; font-size:
   </section>
 
   <footer>
-    <p>Reads the Timeline export from Android or iPhone, and older Google Takeout location files. The location file never leaves your browser. "Send to Google Sheets" sends only the daily times in the table, to your own sheet.</p>
+    <p>Reads the Timeline export from Android or iPhone, and older Google Takeout location files. The location file never leaves your browser. "Send to Google Sheets" sends only the daily times, your notes and the AVAC lines, to your own sheet.</p>
     <p id="installHint">To put it on your home screen: in Chrome, tap ⋮ → <b>Add to home screen</b> → <b>Install</b>.</p>
     <p><button class="link" id="forget" type="button">Forget the data saved on this device</button></p>
   </footer>
@@ -800,6 +878,8 @@ function renderWeek() {
   $('#weekTable tbody').innerHTML = html;
   renderDayline(rows);
   if (state.editing && $('#noteInput')) $('#noteInput').focus();
+  state.weekRows = rows;
+  renderAvac();
 
   const worked = rows.filter(r => r.stints.length);
   const tot = worked.reduce((t, r) => t + r.onSite, 0);
@@ -869,6 +949,109 @@ async function copyText(text, btn) {
   setTimeout(() => { btn.textContent = old; }, 1500);
 }
 
+/* ---------- AVAC (Attendance Variation and Allowance Claim) lines ---------- */
+const AVAC_TYPES = [['OT', 'OT'], ['Recall', 'Recall'], ['On call', 'On call'], ['Add. shift', 'Add. shift'], ['Leave', 'Leave']];
+const AVAC_FULL_HEAD = ['Line', 'Personnel assignment number', 'Employee name', 'Pay level', 'Date', 'Rostered start', 'Rostered finish',
+  'Actual start', 'Actual finish', 'Meal break (min)', 'Cost centre', 'Overtime/Oncall/Recall', 'Comments'];
+function avacSettings() {
+  return Object.assign({ pan: '', name: '', level: '', ouNo: '', ouName: '', location: '', cc: '', comment: '', meal: '',
+    minOver: 15, round: 0, countEarly: false, full: false }, store.get('tos.avac', {}));
+}
+const roundTo = (m, n) => (n ? Math.round(m / n) * n : m);
+const hhmm = m => { const x = Math.round(m); return `${pad(Math.floor(x / 60) % 24)}${pad(x % 60)}`; };
+const hmmDur = m => `${Math.floor(Math.round(m) / 60)}:${pad(Math.round(m) % 60)}`;
+
+// One line per entitlement, as the form asks: the shift's overtime on one line, a recall or extra stint on its own line.
+function avacLines(rows) {
+  const A = avacSettings(), picks = store.get('tos.avacPick', {}), types = store.get('tos.avacType', {});
+  const minOver = Math.max(0, +A.minOver || 0), rnd = +A.round || 0;
+  const out = [];
+  for (const r of rows) {
+    const d = keyToDate(r.key), date = `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+    const hasRoster = r.rostered && r.rs != null && r.re != null;
+    const rStart = hasRoster ? hhmm(r.rs) : '', rFin = hasRoster ? hhmm(r.re) : '';
+    const baseComment = [A.comment, r.note].filter(Boolean);
+    const spans = r.stints.map(st => [minsFromMidnight(r.key, st.s), minsFromMidnight(r.key, st.e)]);
+    let main = -1;
+    if (hasRoster) main = spans.findIndex(([a, b]) => b > r.rs && a < r.re);
+    else if (r.rostered && spans.length) main = 0;
+    spans.forEach(([a0, b0], i) => {
+      let a = roundTo(a0, rnd), b = roundTo(b0, rnd), mins, type;
+      if (i === main) {
+        type = 'OT';
+        if (hasRoster) {
+          const early = A.countEarly ? Math.max(0, r.rs - a) : 0;
+          if (!A.countEarly && a < r.rs) a = r.rs;
+          mins = Math.max(0, b - r.re) + early;
+        } else mins = 0;
+      } else { type = 'Recall'; mins = Math.max(0, b - a); }
+      const key = `${r.key}|${i}`;
+      const auto = mins > 0 && mins >= minOver;
+      const comment = [...baseComment, b >= 1440 ? 'finished next day' : ''].filter(Boolean).join(' · ');
+      const approx = (i === 0 && r.inEst) || (i === spans.length - 1 && r.outEst);
+      out.push({ key, dayKey: r.key, date, rStart, rFin, aStart: hhmm(a), aFin: hhmm(b), meal: A.meal === '' ? '' : String(A.meal),
+        mins, type: types[key] || type, comment, approx, use: key in picks ? !!picks[key] : auto });
+    });
+    if (!r.stints.length && r.note && r.rostered) {
+      const key = `${r.key}|L`;
+      out.push({ key, dayKey: r.key, date, rStart, rFin, aStart: '', aFin: '', meal: '', mins: 0, type: types[key] || 'Leave',
+        comment: baseComment.join(' · '), approx: false, use: key in picks ? !!picks[key] : false });
+    }
+  }
+  let n = 0;
+  for (const l of out) l.line = l.use ? ++n : null;
+  return out;
+}
+const otText = l => (l.type === 'Leave' || !l.mins ? l.type : `${l.type} ${hmmDur(l.mins)}`);
+function avacTable(lines) {
+  const A = avacSettings();
+  return [AVAC_FULL_HEAD, ...lines.filter(l => l.use).map(l => [String(((l.line - 1) % 10) + 1), A.pan, A.name, A.level, l.date,
+    l.rStart, l.rFin, l.aStart, l.aFin, l.meal, A.cc, otText(l), l.comment])];
+}
+
+function renderAvacSettings() {
+  const A = avacSettings();
+  document.querySelectorAll('#avacDetails [data-a]').forEach(el => {
+    const v = A[el.dataset.a];
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : v;
+  });
+}
+function renderAvac(forceFull) {
+  if (!state.weekRows.length) return;
+  const A = avacSettings(), full = forceFull || A.full;
+  const lines = avacLines(state.weekRows);
+  state.avacLines = lines;
+  $('#avacWeek').textContent = $('#weekTitle').textContent;
+  const fixed = [['Org unit no.', A.ouNo], ['Org unit name', A.ouName], ['Location', A.location]]
+    .concat(full ? [] : [['Personnel no.', A.pan], ['Name', A.name], ['Pay level', A.level], ['Cost centre', A.cc]])
+    .filter(([, v]) => v);
+  $('#avacFixed').innerHTML = fixed.length
+    ? fixed.map(([k, v]) => `<span><small>${k}</small>${esc(v)}</span>`).join('')
+    : '<span class="none">Add your name, personnel number and unit under "Form details" and they\'ll show here.</span>';
+  const t = $('#avacTable');
+  t.classList.toggle('full', full);
+  t.querySelector('thead').innerHTML = full
+    ? `<tr><th rowspan="2">Line</th><th rowspan="2">Personnel assignment number</th><th rowspan="2">Employee name</th><th rowspan="2">Pay level</th><th rowspan="2">Date</th><th colspan="2">Rostered</th><th colspan="2">Actual</th><th rowspan="2">Meal break taken (min)</th><th rowspan="2">Cost centre</th><th rowspan="2">Overtime / Oncall / Recall</th><th rowspan="2">Comments</th><th rowspan="2">Employee to initial</th></tr><tr><th>Start</th><th>Finish</th><th>Start</th><th>Finish</th></tr>`
+    : `<tr><th rowspan="2">Line</th><th rowspan="2">Date</th><th colspan="2">Rostered</th><th colspan="2">Actual</th><th rowspan="2">Meal break taken (min)</th><th rowspan="2">Overtime / Oncall / Recall</th><th rowspan="2">Comments</th></tr><tr><th>Start</th><th>Finish</th><th>Start</th><th>Finish</th></tr>`;
+  const cols = full ? 14 : 9;
+  const used = lines.filter(l => l.use).length;
+  let html = '';
+  for (const l of lines) {
+    if (l.use && l.line % 10 === 1 && used > 10) html += `<tr class="formbreak"><td colspan="${cols}">Form ${Math.ceil(l.line / 10)}</td></tr>`;
+    const lineNo = l.use ? ((l.line - 1) % 10) + 1 : '';
+    const sel = `<select data-type="${l.key}" aria-label="Type for ${l.date}">${AVAC_TYPES.map(([v, txt]) => `<option value="${v}" ${l.type === v ? 'selected' : ''}>${txt}</option>`).join('')}</select>`;
+    const ot = `<span class="ot">${sel}<span class="ptype">${esc(l.type)}</span>${l.type !== 'Leave' && l.mins ? `<b>${hmmDur(l.mins)}</b>` : ''}</span>`;
+    const est = l.approx ? '<span class="est" title="Approximate">≈</span>' : '';
+    const cells = full
+      ? [esc(A.pan), esc(A.name), esc(A.level), l.date, l.rStart, l.rFin, est + l.aStart, l.aFin, esc(l.meal), esc(A.cc), ot, `<td class="c">${esc(l.comment)}</td>`, '']
+      : [l.date, l.rStart, l.rFin, est + l.aStart, l.aFin, esc(l.meal), ot, `<td class="c">${esc(l.comment)}</td>`];
+    html += `<tr class="${l.use ? '' : 'unused'}"><td><label class="ln"><input type="checkbox" data-pick="${l.key}" ${l.use ? 'checked' : ''} aria-label="Include ${l.date} on the form"><span>${lineNo}</span></label></td>${cells.map(c => (String(c).startsWith('<td') ? c : `<td>${c}</td>`)).join('')}</tr>`;
+  }
+  t.querySelector('tbody').innerHTML = html;
+  $('#avacEmpty').hidden = lines.length > 0;
+  $('#avacCopy').disabled = !used;
+}
+
 /* ---------- Google Sheets ---------- */
 const SCRIPT_URL_RE = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\/?$/;
 function renderSheets() {
@@ -885,7 +1068,8 @@ function sheetPayload() {
   return {
     app: 'time-on-site', v: 1, sent: new Date().toISOString(),
     week: { start: state.weekStart, rows: rowsToTable(state.weekRows) },
-    days: rowsToTable(allDayRows())
+    days: rowsToTable(allDayRows()),
+    avac: avacTable(avacLines(state.weekRows))
   };
 }
 async function sendToSheets() {
@@ -939,7 +1123,8 @@ function applyData(segs, frequent, raw, info) {
   const hadSaved = applySaved(state.clusters);
   saveSites();
   renderSites(); renderRoster(); renderSheets();
-  ['#sitesCard', '#rosterCard', '#weekCard', '#sheetsCard', '#sumCard'].forEach(s => { $(s).hidden = false; });
+  renderAvacSettings();
+  ['#sitesCard', '#rosterCard', '#weekCard', '#avacCard', '#sheetsCard', '#sumCard'].forEach(s => { $(s).hidden = false; });
   state.weekStart = null;
   refresh();
   return hadSaved;
@@ -1021,6 +1206,30 @@ $('#addRoster').addEventListener('click', () => {
   saveRosters(p); renderRoster(); refresh();
 });
 $('#sharpen').addEventListener('change', e => { store.set('tos.sharpen', e.target.checked); refresh(); });
+$('#avacTable').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.pick) { const p = store.get('tos.avacPick', {}); p[t.dataset.pick] = t.checked; store.set('tos.avacPick', p); }
+  if (t.dataset.type) { const p = store.get('tos.avacType', {}); p[t.dataset.type] = t.value; store.set('tos.avacType', p); }
+  renderAvac();
+});
+const saveAvacSetting = e => {
+  const el = e.target, k = el.dataset.a; if (!k) return;
+  const A = store.get('tos.avac', {});
+  A[k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.tagName === 'SELECT') ? (el.value === '' ? '' : +el.value) : el.value;
+  store.set('tos.avac', A);
+  renderAvac();
+};
+$('#avacDetails').addEventListener('input', saveAvacSetting);
+$('#avacDetails').addEventListener('change', saveAvacSetting);
+$('#avacCopy').addEventListener('click', e => copyText(avacTable(state.avacLines || []).map(r => r.join('\t')).join('\n'), e.currentTarget));
+$('#avacPrint').addEventListener('click', () => {
+  renderAvac(true);
+  document.body.classList.add('printing');
+  // Print styles only apply when printing, so the class can stay until the print dialog closes.
+  const done = () => { document.body.classList.remove('printing'); renderAvac(); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(() => window.print(), 50);
+});
 function saveNote() {
   const k = state.editing; if (!k) return;
   const v = ($('#noteInput').value || '').trim();
@@ -1071,7 +1280,7 @@ $('#unlink').addEventListener('click', () => { store.del('tos.sheetUrl'); store.
 $('#forget').addEventListener('click', async () => {
   if (!confirm('Forget the saved location data, workplaces, rosters, notes and sheet link on this device? Your Google Sheet is not touched.')) return;
   await idb.del('data');
-  ['tos.sites', 'tos.roster', 'tos.rosters', 'tos.notes', 'tos.sharpen', 'tos.sheetUrl', 'tos.sheetLink'].forEach(k => store.del(k));
+  ['tos.sites', 'tos.roster', 'tos.rosters', 'tos.notes', 'tos.sharpen', 'tos.sheetUrl', 'tos.sheetLink', 'tos.avac', 'tos.avacPick', 'tos.avacType'].forEach(k => store.del(k));
   location.reload();
 });
 
