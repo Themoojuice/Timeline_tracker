@@ -8,18 +8,26 @@ Turns a Google Timeline export into filled-in AVAC (Attendance Variation and All
 
 1. Phone Settings → Location → Location services → Timeline → **Export Timeline data**.
 2. Open Time on Site and tap **Import Timeline**.
-3. Tap **Open** on a week (the last 4 weeks in the file are listed). The form is filled in from your timeline; tap any cell to change it.
-4. Tap **Print** (A4 landscape), or print to PDF.
+3. The last 4 weeks in the file are listed, each with its total overtime. Tap a week to open its form.
+4. Check the lines, change anything, then tap **Print** (A4 landscape) or print to PDF.
 
-First time only: open **Settings**, tick your workplaces, check the roster and add your details (name, personnel number, pay level, unit, location, delegate). They fill every form and are saved on that device only.
+First time only: open **Settings**, tick your workplaces, check the roster and add your details (name, initials, personnel number, pay level, unit, location, delegate). They fill every form and are saved on that device only.
 
 ## The forms
 
-Each week gets one line per entitlement, as the paper form asks: a shift's overtime on one line (actual finish past the rostered finish, shown as `OT h:mm`), a recall or extra stint on its own line. Only overtime of at least the minimum (15 min by default) is listed. The form is printed **ruled off** below the last line used (untick *Rule off* to leave it clear). Edits are saved per week on the device; **Reset** rebuilds that week from the timeline. More than 10 lines spill onto a second page.
+Each week gets one line per entitlement, as the paper form asks: a shift's overtime on one line (actual finish past the rostered finish, written `Overtime 0:55`), a recall or extra stint on its own line (`Recall Onsite 1:45`). Dates and times are written the way the official form shows them (`19/01/2026`, `09:00`). Lines with at least the minimum overtime (15 min by default) start on the form.
 
-Settings also cover a comment for every line (such as an internal order number), a default meal break, rounding of actual times to the nearest 5, 15 or 30 minutes, and whether arriving before rostered start counts as overtime (off by default, in which case actual start shows as the rostered start).
+On a form:
 
-The layout follows the paper form's fields; it is not an official template and carries no government branding. Check each form before you sign it.
+- The **total** is at the top, and a **Week total** prints under the Overtime/Oncall/Recall column (split by type if there's more than one).
+- **Lines** lists every stint that week. Tick a line to put it on the form, untick to take it off, or tap it to change its times, entitlement, comment and so on. Changing a time updates that line's overtime. **+ Add a line** adds one by hand (pick the entitlement from the official list and its length fills in from the times).
+- Every cell on the form itself can also be edited. Typing into an empty line adds it.
+- **Rule off** draws the line through the unused rows. **Reset** rebuilds the week from the timeline.
+- Changes are saved per week on the device, and stay attached to the right day if you import a newer export. More than 10 lines spill onto a second page.
+
+Settings also cover a comment for every line (such as an internal order number), the default meal break (30 min), rounding of actual times to the nearest 5, 15 or 30 minutes, and whether arriving before rostered start counts as overtime (off by default, in which case actual start shows as the rostered start).
+
+The layout follows the official form's fields and column proportions; it is not the official file and carries no government branding. The official AVAC is a dynamic Adobe (XFA) form that phone PDF viewers can't open, which is why the page draws its own. Check each form before you sign it.
 
 ## Install it
 
@@ -32,7 +40,7 @@ In Chrome on the phone: ⋮ → **Add to home screen** → **Install**, or tap *
 3. Deploy → New deployment → Web app. Execute as **Me**, Who has access **Anyone**. Deploy and allow access.
 4. Paste the Web app URL into the *Google Sheets link* box.
 
-The sheet gets **This week** (the latest week), **AVAC**, **All days** (new days added, changed days updated, nothing deleted) and **Weeks**. The URL lets anyone who has it write to that sheet, so keep it private.
+The sheet gets **This week** (the latest week), **AVAC** (that week's lines as the timeline found them, without your form edits), **All days** (new days added, changed days updated, nothing deleted) and **Weeks**. The URL lets anyone who has it write to that sheet, so keep it private.
 
 ## Privacy
 

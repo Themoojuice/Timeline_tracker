@@ -7,8 +7,8 @@
  * 4. Paste the Web app URL into Time on Site.
  *
  * Tabs it keeps up to date:
- *   This week  – the week you were viewing when you pressed Send
- *   AVAC       – that week's ticked lines in the paper form's column order, ready to copy across
+ *   This week  – the latest week in your Timeline export
+ *   AVAC       – that week's overtime lines in the paper form's column order
  *   All days   – every day ever sent; new days are added, changed days updated, nothing deleted
  *   Weeks      – one row per week, worked out from All days
  */

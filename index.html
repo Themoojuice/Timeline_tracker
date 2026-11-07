@@ -29,6 +29,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
@@ -66,10 +67,18 @@ details[open] > summary::after { content: "Hide"; }
 
 /* weekly forms list */
 .forms { list-style: none; margin: 8px 0 0; padding: 0; }
-.forms li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.h2row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.h2row .sum-note { margin-left: auto; }
+.forms li { border-top: 1px solid var(--line); }
 .forms li:first-child { border-top: 0; }
+.forms .wkrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: inherit; text-decoration: none; border-radius: 8px; }
+.forms .wkrow:hover b { color: var(--accent); }
+.forms .tot { text-align: right; line-height: 1.1; flex: none; }
+.forms .tot b { display: block; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+.forms .tot small { font-size: 12px; color: var(--muted); }
+.forms .chev { font-size: 26px; line-height: 1; color: var(--muted); flex: none; margin-top: -3px; }
 .forms .wk { flex: 1; min-width: 0; }
-.forms .wk b { display: block; font-size: 16px; }
+.forms .wk b { display: block; font-size: 16px; transition: color .15s; }
 .forms .wk small { display: block; color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 2px; }
 .forms .tag { display: inline-block; font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); margin-left: 6px; vertical-align: 1px; }
 
@@ -108,11 +117,42 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
 
 /* ---------- form screen ---------- */
 #formView { min-height: 100vh; }
-.fv-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: var(--card); border-bottom: 1px solid var(--line); }
-.fv-bar .title { flex: 1; min-width: 140px; font-weight: 600; font-size: 15px; }
+.fv-bar { position: sticky; top: 0; z-index: 5; padding: 8px 12px; background: var(--card); border-bottom: 1px solid var(--line); }
+.fv-row { display: flex; align-items: center; gap: 8px; }
+.fv-row + .fv-row { margin-top: 8px; flex-wrap: wrap; }
+.fv-row .grow { flex: 1; }
+.fv-bar .title { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; line-height: 1.25; }
 .fv-bar .title small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
 .fv-bar button, .fv-bar a.btn { min-height: 40px; padding: 8px 12px; font-size: 14px; }
-.fv-bar .check { font-size: 13px !important; }
+#fvBack { min-width: 44px; font-size: 18px; }
+.fv-bar .check { font-size: 14px !important; align-items: center; }
+.fv-total { text-align: right; line-height: 1.1; flex: none; }
+.fv-total b { display: block; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+.fv-total small { font-size: 12px; color: var(--muted); }
+.lines { background: var(--card); border-bottom: 1px solid var(--line); padding: 2px 12px 10px; }
+.lines > * { max-width: 760px; }
+.lines-tip { font-size: 13px; color: var(--muted); margin: 8px 0 2px; }
+.lines-tip:empty { display: none; }
+.lines ul { list-style: none; margin: 0; padding: 0; }
+.lines li { display: grid; grid-template-columns: 38px 1fr; align-items: center; border-top: 1px solid var(--line); }
+.lines li:first-child { border-top: 0; }
+.lines .tick { display: flex; align-items: center; justify-content: flex-start; min-height: 44px; cursor: pointer; }
+.lines .tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+.lines .del { min-height: 44px; width: 30px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 15px; justify-content: flex-start; }
+.lines .lsum { font: inherit; color: inherit; background: none; border: 0; border-radius: 6px; text-align: left; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 10px 0; min-height: 44px; width: 100%; }
+.lines .lsum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lines .lsum b { font-weight: 600; font-size: 15px; min-width: 84px; }
+.lines .lsum span { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.lines .lsum .ot { color: var(--ink); margin-left: auto; }
+.lines li.off .lsum { opacity: .55; }
+.lines li.open .lsum { color: var(--accent); }
+.lines .led { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 2px 0 14px; }
+.lines .led label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.lines .led label.wide { grid-column: 1 / -1; }
+.lines .led input { min-height: 42px; }
+.lines-foot { display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.lines-foot button { min-height: 40px; font-size: 14px; }
+.lines-total { margin-left: auto; font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 .fv-tip { font-size: 12px; color: var(--muted); padding: 6px 12px 0; }
 .paper-wrap { padding: 12px 8px 40px; overflow-x: auto; }
 #paper { width: 297mm; margin: 0 auto; transform-origin: top left; }
@@ -145,6 +185,11 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
 .f-grid td.pan input[type=checkbox] { margin: 0 1.2mm; }
 .f-grid td input { text-align: center; font-size: 8.5pt; }
 .f-grid td.left input { text-align: left; }
+.f-grid tfoot td { border: 0; height: 7mm; }
+.f-grid tfoot td.lbl { text-align: right; padding-right: 2.5mm; font-weight: 700; font-size: 8.5pt; }
+.f-grid tfoot td[data-total] { border: 0.3mm solid #000; border-top: 0; font-weight: 700; font-size: 9pt; }
+.f-grid tfoot td.note { text-align: left; padding-left: 2mm; font-size: 7.5pt; }
+.page input::-webkit-calendar-picker-indicator { display: none !important; }
 .f-gridwrap { position: relative; }
 .f-gridwrap svg.ruled { position: absolute; left: 0; top: 0; pointer-events: none; }
 .f-notes { font-size: 7.3pt; margin: 1.6mm 0 1.8mm; line-height: 1.3; }
@@ -158,7 +203,8 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
 @media print {
   @page { size: A4 landscape; margin: 0; }
   html, body { background: #fff !important; }
-  main, .fv-bar, .fv-tip { display: none !important; }
+  main, .fv-bar, .fv-tip, .lines { display: none !important; }
+  #paperWrap { height: auto !important; }
   #formView { min-height: 0; }
   .paper-wrap { padding: 0; overflow: visible; }
   #paper { transform: none !important; width: 297mm; margin: 0; }
@@ -193,8 +239,8 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
   </section>
 
   <section class="card" id="formsCard" hidden>
-    <h2>AVAC forms</h2>
-    <p class="hint">One form per week, last 4 weeks. Open one to check it, edit any cell, then print.</p>
+    <div class="h2row"><h2>AVAC forms</h2><span class="sum-note" id="formsTotal"></span></div>
+    <p class="hint">One form per week, last 4 weeks. Open a week to check it, change anything, then print.</p>
     <div id="nudge" class="nudge" hidden></div>
     <ul class="forms" id="formList"></ul>
   </section>
@@ -206,17 +252,18 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
       <h3>Your details (go on every form)</h3>
       <div class="grid2" id="avacDetails">
         <label>Employee name<input type="text" data-a="name" autocomplete="name"></label>
-        <label>Personnel assignment number<input type="text" data-a="pan" autocomplete="off"></label>
+        <label>Initials (for "Employee to initial")<input type="text" data-a="initials" maxlength="4" autocomplete="off"></label>
+        <label>Personnel assignment number<input type="text" data-a="pan" inputmode="numeric" autocomplete="off"></label>
         <label>Pay level<input type="text" data-a="level" autocomplete="off"></label>
-        <label>Cost centre (only if overriding)<input type="text" data-a="cc" autocomplete="off"></label>
-        <label>Organisational unit no.<input type="text" data-a="ouNo" maxlength="8" autocomplete="off"></label>
+        <label>Organisational unit no.<input type="text" data-a="ouNo" maxlength="8" inputmode="numeric" autocomplete="off"></label>
         <label>Organisational unit name<input type="text" data-a="ouName" autocomplete="off"></label>
         <label class="wide">Location<input type="text" data-a="location" autocomplete="off"></label>
+        <label>Cost centre (only if overriding)<input type="text" data-a="cc" autocomplete="off"></label>
+        <label>Meal break (minutes)<input type="number" data-a="meal" min="0" step="5" placeholder="blank"></label>
         <label class="wide">Comment on every line<input type="text" data-a="comment" placeholder="e.g. internal order number" autocomplete="off"></label>
         <label>Delegate's name (approver)<input type="text" data-a="delegate" autocomplete="off"></label>
         <label>Delegate's position title<input type="text" data-a="delegateTitle" autocomplete="off"></label>
-
-        <label>Meal break (minutes)<input type="number" data-a="meal" min="0" step="5" placeholder="blank"></label>
+        <label>Delegate's phone number<input type="text" data-a="delegatePhone" inputmode="tel" autocomplete="off"></label>
         <label>Shortest overtime to list (min)<input type="number" data-a="minOver" min="0" step="5"></label>
         <label class="wide">Round actual times to the nearest
           <select class="in" data-a="round"><option value="0">Minute (exact)</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option></select>
@@ -267,14 +314,28 @@ footer { color: var(--muted); font-size: 13px; margin-top: 20px; }
 
 <div id="formView" hidden>
   <div class="fv-bar">
-    <a class="btn" href="#" id="fvBack" aria-label="Back to forms">← Forms</a>
-    <div class="title" id="fvTitle"></div>
-    <label class="check"><input type="checkbox" id="fvRule">Rule off</label>
-    <button id="fvReset" type="button">Reset</button>
-    <button id="fvPrint" type="button" class="primary">Print</button>
+    <div class="fv-row">
+      <a class="btn" href="#" id="fvBack" aria-label="Back to forms">←</a>
+      <div class="title" id="fvTitle"></div>
+      <div class="fv-total" id="fvTotal" aria-live="polite"></div>
+    </div>
+    <div class="fv-row">
+      <button id="linesBtn" type="button" aria-expanded="false" aria-controls="fvLines">Lines</button>
+      <label class="check"><input type="checkbox" id="fvRule">Rule off</label>
+      <span class="grow"></span>
+      <button id="fvReset" type="button">Reset</button>
+      <button id="fvPrint" type="button" class="primary">Print</button>
+    </div>
   </div>
-  <p class="fv-tip" id="fvTip">Tap any cell to edit; changes save on this device. Pinch to zoom on a phone.</p>
+  <section class="lines" id="fvLines" hidden aria-label="Lines on this form">
+    <p class="lines-tip">Tick a line to put it on the form; tap it to change it. Changing a time updates its overtime.</p>
+    <ul id="lineList"></ul>
+    <div class="lines-foot"><button id="addLine" type="button">+ Add a line</button><span class="lines-total" id="linesTotal"></span></div>
+    <p class="lines-tip" id="linesNote"></p>
+  </section>
+  <p class="fv-tip" id="fvTip">The form is editable too: tap a cell (pinch to zoom). Everything saves on this phone.</p>
   <div class="paper-wrap" id="paperWrap"><div id="paper"></div></div>
+  <datalist id="otTypes"><option value="Overtime"><option value="Recall Onsite"><option value="Recall Offsite"><option value="Recall Telephone Advice (Medical)"><option value="Oncall"><option value="HP Emergency Clinical On Call"><option value="HPDO Priority On Call"><option value="Recall Offsite Normal Duties (QPSOOE award)"></datalist>
 </div>
 
 <script>
@@ -738,24 +799,34 @@ async function copyText(text, btn) {
 }
 
 /* ---------- AVAC (Attendance Variation and Allowance Claim) lines ---------- */
-const AVAC_TYPES = [['OT', 'OT'], ['Recall', 'Recall'], ['On call', 'On call'], ['Add. shift', 'Add. shift'], ['Leave', 'Leave']];
+// Entitlement names as the official form's Overtime/Oncall/Recall list spells them.
+const OT_TYPES = ['Overtime', 'Recall Onsite', 'Recall Offsite', 'Recall Telephone Advice (Medical)', 'Oncall',
+  'HP Emergency Clinical On Call', 'HPDO Priority On Call', 'Recall Offsite Normal Duties (QPSOOE award)'];
 const AVAC_FULL_HEAD = ['Line', 'Personnel assignment number', 'Employee name', 'Pay level', 'Date', 'Rostered start', 'Rostered finish',
   'Actual start', 'Actual finish', 'Meal break (min)', 'Cost centre', 'Overtime/Oncall/Recall', 'Comments'];
 function avacSettings() {
-  return Object.assign({ pan: '', name: '', level: '', ouNo: '', ouName: '', location: '', cc: '', comment: '', meal: '',
-    minOver: 15, round: 0, countEarly: false, full: false }, store.get('tos.avac', {}));
+  return Object.assign({ pan: '', name: '', initials: '', level: '', ouNo: '', ouName: '', location: '', cc: '', comment: '', meal: 30,
+    minOver: 15, round: 0, countEarly: false, delegate: '', delegateTitle: '', delegatePhone: '' }, store.get('tos.avac', {}));
+}
+function initialsOf(name) {
+  const w = String(name || '').replace(/^\s*(dr|mr|mrs|ms|miss|mx|prof|professor)\.?\s+/i, '').split(/\s+/).filter(Boolean);
+  return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : '';
 }
 const roundTo = (m, n) => (n ? Math.round(m / n) * n : m);
-const hhmm = m => { const x = Math.round(m); return `${pad(Math.floor(x / 60) % 24)}${pad(x % 60)}`; };
+// Times and dates are written the way the official form shows them: 09:00 and 19/01/2026.
+const hhmm = m => { const x = ((Math.round(m) % 1440) + 1440) % 1440; return `${pad(Math.floor(x / 60))}:${pad(x % 60)}`; };
 const hmmDur = m => `${Math.floor(Math.round(m) / 60)}:${pad(Math.round(m) % 60)}`;
+const formDate = k => `${k.slice(8, 10)}/${k.slice(5, 7)}/${k.slice(0, 4)}`;
+const dayName = k => DAYS[(keyToDate(k).getUTCDay() + 6) % 7];
 
 // One line per entitlement, as the form asks: the shift's overtime on one line, a recall or extra stint on its own line.
 function avacLines(rows) {
-  const A = avacSettings(), picks = {}, types = {}; // lines are automatic now; changes are made on the form itself
+  const A = avacSettings();
   const minOver = Math.max(0, +A.minOver || 0), rnd = +A.round || 0;
+  const meal = A.meal === '' || A.meal == null ? '' : String(A.meal);
   const out = [];
   for (const r of rows) {
-    const d = keyToDate(r.key), date = `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+    const date = formDate(r.key);
     const hasRoster = r.rostered && r.rs != null && r.re != null;
     const rStart = hasRoster ? hhmm(r.rs) : '', rFin = hasRoster ? hhmm(r.re) : '';
     const baseComment = [A.comment, r.note].filter(Boolean);
@@ -766,35 +837,68 @@ function avacLines(rows) {
     spans.forEach(([a0, b0], i) => {
       let a = roundTo(a0, rnd), b = roundTo(b0, rnd), mins, type;
       if (i === main) {
-        type = 'OT';
+        type = 'Overtime';
         if (hasRoster) {
           const early = A.countEarly ? Math.max(0, r.rs - a) : 0;
           if (!A.countEarly && a < r.rs) a = r.rs;
           mins = Math.max(0, b - r.re) + early;
         } else mins = 0;
-      } else { type = 'Recall'; mins = Math.max(0, b - a); }
-      const key = `${r.key}|${i}`;
-      const auto = mins > 0 && mins >= minOver;
+      } else { type = 'Recall Onsite'; mins = Math.max(0, b - a); }
       const comment = [...baseComment, b >= 1440 ? 'finished next day' : ''].filter(Boolean).join(' · ');
       const approx = (i === 0 && r.inEst) || (i === spans.length - 1 && r.outEst);
-      out.push({ key, dayKey: r.key, date, rStart, rFin, aStart: hhmm(a), aFin: hhmm(b), meal: A.meal === '' ? '' : String(A.meal),
-        mins, type: types[key] || type, comment, approx, use: key in picks ? !!picks[key] : auto });
+      out.push({ key: `${r.key}|${i}`, dayKey: r.key, date, rStart, rFin, aStart: hhmm(a), aFin: hhmm(b), meal,
+        mins, type, comment, approx, use: mins > 0 && mins >= minOver });
     });
     if (!r.stints.length && r.note && r.rostered) {
-      const key = `${r.key}|L`;
-      out.push({ key, dayKey: r.key, date, rStart, rFin, aStart: '', aFin: '', meal: '', mins: 0, type: types[key] || 'Leave',
-        comment: baseComment.join(' · '), approx: false, use: key in picks ? !!picks[key] : false });
+      out.push({ key: `${r.key}|L`, dayKey: r.key, date, rStart, rFin, aStart: '', aFin: '', meal: '', mins: 0, type: 'Leave',
+        comment: baseComment.join(' · '), approx: false, use: false });
     }
   }
   let n = 0;
   for (const l of out) l.line = l.use ? ++n : null;
   return out;
 }
-const otText = l => (l.type === 'Leave' || !l.mins ? l.type : `${l.type} ${hmmDur(l.mins)}`);
+const otText = l => (l.type !== 'Leave' && l.mins ? `${l.type} ${hmmDur(l.mins)}` : '');
 function avacTable(lines) {
   const A = avacSettings();
   return [AVAC_FULL_HEAD, ...lines.filter(l => l.use).map(l => [String(((l.line - 1) % 10) + 1), A.pan, A.name, A.level, l.date,
     l.rStart, l.rFin, l.aStart, l.aFin, l.meal, A.cc, otText(l), l.comment])];
+}
+
+/* ---------- reading what's in a cell ---------- */
+const parseClock = s => { const m = /^\s*(\d{1,2})[:.]?(\d{2})\s*$/.exec(String(s || '')); return m && +m[1] < 48 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; };
+function canonType(t) {
+  const s = String(t || '').trim();
+  if (!s || /^(ot|overtime)$/i.test(s)) return 'Overtime';
+  if (/^recall$/i.test(s)) return 'Recall Onsite';
+  return OT_TYPES.find(x => x.toLowerCase() === s.toLowerCase()) || s;
+}
+// "Overtime 1:05" → { type: 'Overtime', mins: 65 }; "Oncall" → { type: 'Oncall', mins: null }
+function parseOT(s) {
+  const m = /^(.*?)\s*(?:(\d{1,2}):(\d{2}))?\s*$/.exec(String(s || ''));
+  if (!m || (!m[1].trim() && m[2] == null)) return null;
+  return { type: canonType(m[1]), mins: m[2] != null ? +m[2] * 60 + +m[3] : null };
+}
+function totalsOf(cells) {
+  const by = new Map(); let all = 0;
+  for (const s of cells) { const p = parseOT(s); if (!p || !p.mins) continue; by.set(p.type, (by.get(p.type) || 0) + p.mins); all += p.mins; }
+  return { all, by };
+}
+const breakdown = T => [...T.by].map(([t, m]) => `${t} ${hmmDur(m)}`).join(' + ');
+// Keep the duration in the Overtime/Oncall/Recall cell in step with the times on its line.
+function otFromTimes(ot, rs, rf, as, af) {
+  const p = parseOT(ot); if (!p || !OT_TYPES.includes(p.type)) return null;
+  const RS = parseClock(rs), RF = parseClock(rf), AS = parseClock(as), AF = parseClock(af);
+  let mins;
+  if (p.type === 'Overtime') {
+    if (RF == null || AF == null) return null;
+    const end = AS != null && AF < AS ? AF + 1440 : AF;
+    mins = Math.max(0, end - RF) + (avacSettings().countEarly && RS != null && AS != null ? Math.max(0, RS - AS) : 0);
+  } else {
+    if (AS == null || AF == null) return null;
+    mins = AF >= AS ? AF - AS : AF + 1440 - AS;
+  }
+  return `${p.type} ${hmmDur(mins)}`;
 }
 
 /* ---------- Google Sheets (optional extra) ---------- */
@@ -845,6 +949,7 @@ function renderAvacSettings() {
     const v = A[el.dataset.a];
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : v;
   });
+  $('#avacDetails [data-a="initials"]').placeholder = initialsOf(A.name) || 'e.g. BW';
 }
 function renderSettingsNote() {
   const A = avacSettings();
@@ -860,20 +965,69 @@ function weeksCovered() {
   return out;
 }
 const weekLabel = ws => { const we = addDays(ws, 6); const same = keyToDate(ws).getUTCFullYear() === keyToDate(we).getUTCFullYear(); return `${nice(ws, !same)} – ${nice(we, true)}`; };
+
+// What you change on a form is kept per week: edits by line, lines ticked on or off, and lines you added.
 const formsStore = () => store.get('tos.forms', {});
-const editedCount = ws => { const f = formsStore()[ws]; return f && f.edits ? Object.keys(f.edits).length : 0; };
+function formState(ws) {
+  const f = formsStore()[ws] || {};
+  return { edits: f.edits || {}, pick: f.pick || {}, extra: f.extra || [], next: f.next || 1 };
+}
+function putFormState(ws, f) {
+  const F = formsStore();
+  if (!Object.keys(f.edits).length && !Object.keys(f.pick).length && !f.extra.length) delete F[ws];
+  else F[ws] = { edits: f.edits, pick: f.pick, extra: f.extra, next: f.next, updated: Date.now() };
+  store.set('tos.forms', F);
+}
+function rowDefaults(v, k, l, A) {
+  const set = (c, x) => { v[`${k}.${c}`] = x == null ? '' : String(x); };
+  set('pan', A.pan); set('name', A.name); set('level', A.level); set('cost', A.cc); set('ini', A.initials || initialsOf(A.name));
+  set('date', l ? l.date : ''); set('rs', l ? l.rStart : ''); set('rf', l ? l.rFin : '');
+  set('as', l ? l.aStart : ''); set('af', l ? l.aFin : ''); set('ot', l ? otText(l) : '');
+  set('meal', l ? l.meal : (A.meal === '' || A.meal == null ? '' : A.meal)); set('com', l ? l.comment : A.comment);
+}
+function formModel(ws) {
+  const A = avacSettings(), f = formState(ws), all = avacLines(weekRowsFor(ws));
+  const isOn = l => (l.key in f.pick ? !!f.pick[l.key] : l.use);
+  // The first version of this screen kept edits by line number; move them onto the lines they were made on.
+  if (Object.keys(f.edits).some(k => /^L\d+\./.test(k))) {
+    const on = all.filter(isOn), made = {};
+    for (const k of Object.keys(f.edits)) {
+      const m = /^L(\d+)\.(.+)$/.exec(k); if (!m) continue;
+      let rk = on[+m[1]] ? on[+m[1]].key : made[m[1]];
+      if (!rk) { rk = `x${f.next++}`; f.extra.push(rk); made[m[1]] = rk; }
+      f.edits[`${rk}.${m[2]}`] = f.edits[k]; delete f.edits[k];
+    }
+    putFormState(ws, f);
+  }
+  const v = { 'h.ouName': A.ouName || '', 'h.loc': A.location || '', 'h.svc': '', 'a.sig': '', 'a.name': A.delegate || '',
+    'a.title': A.delegateTitle || '', 'a.area': '(07)', 'a.phone': A.delegatePhone || '', 'a.date': '' };
+  const ou = String(A.ouNo || '').replace(/\s/g, '');
+  for (let i = 0; i < 8; i++) v[`h.ou.${i}`] = ou[i] || '';
+  for (const l of all) rowDefaults(v, l.key, l, A);
+  for (const k of f.extra) rowDefaults(v, k, null, A);
+  Object.assign(v, f.edits);
+  const rows = [...all.filter(isOn).map(l => ({ k: l.key, l })), ...f.extra.map(k => ({ k, l: null }))];
+  return { ws, v, rows, all, isOn, f, pages: Math.max(1, Math.ceil(rows.length / 10)), totals: totalsOf(rows.map(r => v[`${r.k}.ot`])),
+    edited: Object.keys(f.edits).length + Object.keys(f.pick).length + f.extra.length };
+}
 
 function renderFormList() {
   state.weeks = weeksCovered();
+  let grand = 0;
   $('#formList').innerHTML = state.weeks.map(ws => {
-    const lines = avacLines(weekRowsFor(ws)).filter(l => l.use);
-    const ot = lines.reduce((t, l) => t + (l.type === 'Leave' ? 0 : l.mins), 0);
+    const m = formModel(ws), T = m.totals, n = m.rows.length;
+    grand += T.all;
     const we = addDays(ws, 6), a = ws < state.dataFirst ? state.dataFirst : ws, z = we > state.dataLast ? state.dataLast : we;
-    const part = a !== ws || z !== we ? ` · timeline has ${a === z ? nice(a) : `${nice(a)}–${nice(z)}`} only` : '';
-    const sub = (lines.length ? `${lines.length} line${lines.length === 1 ? '' : 's'} · ${dur(ot)} overtime` : 'No overtime found') + part;
-    return `<li><div class="wk"><b>${weekLabel(ws)}${editedCount(ws) ? '<span class="tag">edited</span>' : ''}</b><small>${sub}</small></div>
-      <a class="btn primary" href="#form/${ws}" aria-label="Open the form for ${weekLabel(ws)}">Open</a></li>`;
+    const part = a !== ws || z !== we ? `timeline has ${a === z ? nice(a) : `${nice(a)}–${nice(z)}`} only` : '';
+    const sub = [n ? `${n} line${n === 1 ? '' : 's'}` : 'no overtime found', T.by.size > 1 ? breakdown(T) : '', part, m.edited ? 'edited' : '']
+      .filter(Boolean).join(' · ');
+    const kind = T.by.size === 1 ? [...T.by.keys()][0].toLowerCase() : 'total';
+    return `<li><a class="wkrow" href="#form/${ws}" aria-label="${weekLabel(ws)}: ${T.all ? `${hmmDur(T.all)} ${kind}` : 'nothing claimed'}. Open the form.">
+      <span class="wk"><b>${weekLabel(ws)}</b><small>${esc(sub.charAt(0).toUpperCase() + sub.slice(1))}</small></span>
+      <span class="tot"><b>${T.all ? hmmDur(T.all) : '–'}</b><small>${T.all ? esc(kind) : 'none'}</small></span>
+      <span class="chev" aria-hidden="true">›</span></a></li>`;
   }).join('') || '<li><span class="hint">No weeks found in this file.</span></li>';
+  $('#formsTotal').textContent = state.weeks.length > 1 && grand ? `${hmmDur(grand)} over ${state.weeks.length} weeks` : '';
   const A = avacSettings();
   const missing = [!A.name && 'name', !A.pan && 'personnel number'].filter(Boolean);
   const noSite = !state.clusters.some(c => c.on);
@@ -883,66 +1037,45 @@ function renderFormList() {
   renderSettingsNote();
 }
 
-// Form values: built from the timeline, then your edits laid over the top.
-function formModel(ws) {
-  const A = avacSettings();
-  const lines = avacLines(weekRowsFor(ws)).filter(l => l.use);
-  const pages = Math.max(1, Math.ceil(lines.length / 10));
-  const v = { 'h.ouName': A.ouName || '', 'h.loc': A.location || '', 'h.svc': '',
-    'a.sig': '', 'a.name': A.delegate || '', 'a.title': A.delegateTitle || '', 'a.area': '(07)', 'a.phone': '', 'a.date': '' };
-  const ou = String(A.ouNo || '').replace(/\s/g, '');
-  for (let i = 0; i < 8; i++) v[`h.ou.${i}`] = ou[i] || '';
-  lines.forEach((l, n) => {
-    const k = c => `L${n}.${c}`;
-    Object.assign(v, { [k('pan')]: A.pan || '', [k('name')]: A.name || '', [k('level')]: A.level || '', [k('date')]: l.date,
-      [k('rs')]: l.rStart, [k('rf')]: l.rFin, [k('as')]: l.aStart, [k('af')]: l.aFin, [k('meal')]: l.meal, [k('cost')]: A.cc || '',
-      [k('ot')]: otText(l), [k('com')]: l.comment, [k('ini')]: '' });
-  });
-  const saved = formsStore()[ws] || {};
-  const edits = saved.edits || {};
-  let maxLine = -1;
-  for (const key of Object.keys(edits)) { const m = /^L(\d+)\./.exec(key); if (m) maxLine = Math.max(maxLine, +m[1]); }
-  return { v: Object.assign(v, edits), pages: Math.max(pages, Math.ceil((maxLine + 1) / 10)), lines, edited: Object.keys(edits).length };
-}
+/* ---------- the form ---------- */
+const COLS = [['pan', 'personnel assignment number'], ['name', 'employee name', 'left'], ['level', 'pay level'], ['date', 'date'],
+  ['rs', 'rostered start'], ['rf', 'rostered finish'], ['as', 'actual start'], ['af', 'actual finish'], ['meal', 'meal break minutes'],
+  ['cost', 'cost centre'], ['ot', 'overtime, on call or recall'], ['com', 'comments', 'left'], ['ini', 'employee initial']];
+const TIME_COLS = ['rs', 'rf', 'as', 'af'];
+const cssq = s => String(s).replace(/["\\]/g, '\\$&');
+const cell = (k, v, label, extra = '') => `<input type="text" data-k="${esc(k)}" value="${esc(v == null ? '' : v)}" aria-label="${esc(label)}" autocomplete="off" spellcheck="false"${extra}>`;
 
-const cell = (k, v, extra = '') => `<input type="text" data-k="${k}" value="${esc(v == null ? '' : v)}" autocomplete="off" spellcheck="false" ${extra}>`;
-function pageHTML(p, pages, v) {
+function pageHTML(p, m) {
+  const { v, rows, pages } = m;
   const ou = [...Array(8)].map((_, i) => `<input type="text" maxlength="1" data-k="h.ou.${i}" value="${esc(v[`h.ou.${i}`] || '')}" aria-label="Organisational unit number, box ${i + 1}" autocomplete="off">`).join('');
-  let rows = '';
+  let body = '';
   for (let i = 0; i < 10; i++) {
-    const n = p * 10 + i, k = c => `L${n}.${c}`, g = c => v[k(c)];
-    rows += `<tr data-n="${n}"><td class="ln">${i + 1}</td>
-      <td class="pan"><div class="cellrow">${cell(k('pan'), g('pan'), `aria-label="Line ${i + 1} personnel assignment number"`)}<input type="checkbox" data-k="${k('conc')}" ${g('conc') ? 'checked' : ''} aria-label="Line ${i + 1}: more than one job at the same time"></div></td>
-      <td class="left">${cell(k('name'), g('name'), `aria-label="Line ${i + 1} employee name"`)}</td>
-      <td>${cell(k('level'), g('level'), `aria-label="Line ${i + 1} pay level"`)}</td>
-      <td>${cell(k('date'), g('date'), `aria-label="Line ${i + 1} date"`)}</td>
-      <td>${cell(k('rs'), g('rs'), `aria-label="Line ${i + 1} rostered start"`)}</td>
-      <td>${cell(k('rf'), g('rf'), `aria-label="Line ${i + 1} rostered finish"`)}</td>
-      <td>${cell(k('as'), g('as'), `aria-label="Line ${i + 1} actual start"`)}</td>
-      <td>${cell(k('af'), g('af'), `aria-label="Line ${i + 1} actual finish"`)}</td>
-      <td>${cell(k('meal'), g('meal'), `aria-label="Line ${i + 1} meal break minutes"`)}</td>
-      <td>${cell(k('cost'), g('cost'), `aria-label="Line ${i + 1} cost centre"`)}</td>
-      <td>${cell(k('ot'), g('ot'), `aria-label="Line ${i + 1} overtime, on call or recall"`)}</td>
-      <td class="left">${cell(k('com'), g('com'), `aria-label="Line ${i + 1} comments"`)}</td>
-      <td>${cell(k('ini'), g('ini'), `aria-label="Line ${i + 1} employee initial"`)}</td></tr>`;
+    const idx = p * 10 + i, r = rows[idx], k = r ? r.k : `n${idx}`, L = `Line ${i + 1}`;
+    const g = c => (r ? v[`${k}.${c}`] : '');
+    const conc = g('conc') === true || g('conc') === 'true';
+    body += `<tr data-row="${esc(k)}"><td class="ln">${i + 1}</td>` + COLS.map(([c, label, cls]) => c === 'pan'
+      ? `<td class="pan"><div class="cellrow">${cell(`${k}.pan`, g('pan'), `${L} ${label}`)}<input type="checkbox" data-k="${esc(k)}.conc" ${conc ? 'checked' : ''} aria-label="${L}: more than one job at the same time"></div></td>`
+      : `<td${cls ? ` class="${cls}"` : ''}>${cell(`${k}.${c}`, g(c), `${L} ${label}`, c === 'ot' ? ' list="otTypes"' : '')}</td>`).join('') + '</tr>';
   }
+  const foot = p === pages - 1 ? '<tfoot><tr><td colspan="11" class="lbl">Week total</td><td data-total></td><td colspan="2" class="note" data-total-note></td></tr></tfoot>' : '';
+  const box = (k, label) => `<span class="box">${cell(k, v[k], label)}</span>`;
   return `<div class="page" data-p="${p}">
   <div class="f-title"><h1>Attendance Variation and Allowance Claim (AVAC)</h1></div>
   <p class="f-use">Use this form to advise changes to your roster (i.e. all unplanned leave, shift changes, approved overtime, approved additional shift, recall, etc). The approver of this form is not able to approve their own changes. A separate form will need to be completed and approved by the appropriate delegate.</p>
   <div class="f-head">
     <label>Organisational unit no.<span class="boxes">${ou}</span></label>
-    <label>Organisational unit name<span class="box">${cell('h.ouName', v['h.ouName'], 'aria-label="Organisational unit name"')}</span></label>
-    <label>Location<span class="box">${cell('h.loc', v['h.loc'], 'aria-label="Location"')}</span></label>
-    <label>Serviceline enquiry number (payroll only)<span class="box">${cell('h.svc', v['h.svc'], 'aria-label="Serviceline enquiry number"')}</span></label>
+    <label>Organisational unit name${box('h.ouName', 'Organisational unit name')}</label>
+    <label>Location${box('h.loc', 'Location')}</label>
+    <label>Serviceline enquiry number (payroll only)${box('h.svc', 'Serviceline enquiry number')}</label>
   </div>
   <div class="f-gridwrap">
   <table class="f-grid">
-    <colgroup><col style="width:8mm"><col style="width:25mm"><col style="width:36mm"><col style="width:12mm"><col style="width:15mm"><col style="width:11.5mm"><col style="width:11.5mm"><col style="width:11.5mm"><col style="width:11.5mm"><col style="width:11mm"><col style="width:15.5mm"><col style="width:30mm"><col><col style="width:13mm"></colgroup>
+    <colgroup><col style="width:2.26%"><col style="width:8.92%"><col style="width:14.9%"><col style="width:4.55%"><col style="width:6.7%"><col style="width:4.16%"><col style="width:3.96%"><col style="width:3.87%"><col style="width:3.67%"><col style="width:3.76%"><col style="width:5.53%"><col style="width:12.58%"><col style="width:20.57%"><col style="width:4.57%"></colgroup>
     <thead>
       <tr><th rowspan="2">Line</th><th rowspan="2">Personnel assignment number<small>Please indicate ☑ if you work in more than one job at the same time (concurrent employment arrangement)</small></th><th rowspan="2">Employee Name</th><th rowspan="2">Pay Level</th><th rowspan="2">Date</th><th colspan="2">Rostered</th><th colspan="2">Actual</th><th>Meal break taken</th><th rowspan="2">Cost Centre<small>*Variation only</small></th><th colspan="2">Complete relevant field/s and use separate line for each entitlement</th><th rowspan="2">Employee to initial</th></tr>
       <tr><th>Start</th><th>Finish</th><th>Start</th><th>Finish</th><th>Minutes</th><th>Overtime/Oncall/Recall</th><th>Comments<small>e.g. shift swap, shift change, leave type, internal order number, allowances, fatigue.</small></th></tr>
     </thead>
-    <tbody>${rows}</tbody>
+    <tbody>${body}</tbody>${foot}
   </table>
   </div>
   <p class="f-notes">The cost centre field should only be completed when overriding the employee's position cost centre, for example when the employee works temporarily in a different work unit. Cost centre (and relevant Internal Order Numbers where applicable) must be stated for all Roster Adjustments. Please ensure AVAC is ruled off prior to submitting to Payroll Transactional Services via myHR.</p>
@@ -950,15 +1083,15 @@ function pageHTML(p, pages, v) {
     <div class="bar">Approval</div>
     <p>I certify that the above claim/s is/are approved in accordance with relevant legislation, contract framework, industrial agreements and policies and that the necessary supporting documentation has been attached.</p>
     <div class="f-app">
-      <label>Delegate's Signature<span class="box">${cell('a.sig', v['a.sig'], 'aria-label="Delegate\'s signature"')}</span></label>
-      <label>Delegate's full name (please print)<span class="box">${cell('a.name', v['a.name'], 'aria-label="Delegate\'s full name"')}</span></label>
-      <label>Delegate's position title<span class="box">${cell('a.title', v['a.title'], 'aria-label="Delegate\'s position title"')}</span></label>
-      <label>Area code<span class="box">${cell('a.area', v['a.area'], 'aria-label="Area code"')}</span></label>
-      <label>Contact telephone number<span class="box">${cell('a.phone', v['a.phone'], 'aria-label="Contact telephone number"')}</span></label>
-      <label>Date<span class="box">${cell('a.date', v['a.date'], 'aria-label="Date"')}</span></label>
+      <label>Delegate's Signature${box('a.sig', "Delegate's signature")}</label>
+      <label>Delegate's full name (please print)${box('a.name', "Delegate's full name")}</label>
+      <label>Delegate's position title${box('a.title', "Delegate's position title")}</label>
+      <label>Area code${box('a.area', 'Area code')}</label>
+      <label>Contact telephone number${box('a.phone', 'Contact telephone number')}</label>
+      <label>Date${box('a.date', 'Date')}</label>
     </div>
   </div>
-  <div class="f-foot"><span>Prepared with Time on Site from Google Timeline data</span><span>${pages > 1 ? `${p + 1} of ${pages}` : '1 of 1'}</span></div>
+  <div class="f-foot"><span>Prepared with Time on Site from Google Timeline data</span><span>${p + 1} of ${pages}</span></div>
 </div>`;
 }
 
@@ -972,11 +1105,21 @@ function drawRuleOff() {
     let last = -1;
     trs.forEach((tr, i) => { if ([...tr.querySelectorAll('input')].some(x => (x.type === 'checkbox' ? x.checked : x.value.trim()))) last = i; });
     if (last >= trs.length - 1) return;
-    const table = wrap.querySelector('table');
+    const table = wrap.querySelector('table'), end = trs[trs.length - 1];
     const top = last >= 0 ? trs[last].offsetTop + trs[last].offsetHeight : trs[0].offsetTop;
-    const bottom = table.offsetHeight, w = table.offsetWidth, x0 = trs[0].cells[0].offsetWidth;
+    const bottom = end.offsetTop + end.offsetHeight, w = table.offsetWidth, x0 = trs[0].cells[0].offsetWidth;
     wrap.insertAdjacentHTML('beforeend', `<svg class="ruled" width="${w}" height="${bottom}" viewBox="0 0 ${w} ${bottom}" aria-hidden="true"><line x1="${x0}" y1="${top}" x2="${w}" y2="${bottom}" stroke="#000" stroke-width="1.6"/></svg>`);
   });
+}
+
+function updateTotals() {
+  if (!state.form) return;
+  const T = totalsOf([...document.querySelectorAll('#paper input[data-k$=".ot"]')].map(i => i.value));
+  const types = [...T.by.keys()], big = hmmDur(T.all);
+  $('#fvTotal').innerHTML = `<b>${T.all ? big : '0:00'}</b><small>${T.all ? esc(types.length === 1 ? types[0] : 'total claimed') : 'nothing claimed'}</small>`;
+  document.querySelectorAll('#paper [data-total]').forEach(td => { td.textContent = T.all ? (types.length === 1 ? `${types[0]} ${big}` : big) : ''; });
+  document.querySelectorAll('#paper [data-total-note]').forEach(td => { td.textContent = types.length > 1 ? breakdown(T) : ''; });
+  $('#linesTotal').textContent = T.all ? `${types.length > 1 ? breakdown(T) + ' = ' : ''}${types.length === 1 ? types[0] + ' ' : ''}${big}` : '';
 }
 
 function fitPaper() {
@@ -990,39 +1133,125 @@ function fitPaper() {
   wrap.style.height = `${Math.ceil(h * s) + 40}px`;
 }
 
+/* lines panel: the phone-sized way to tick, add and change lines */
+const LINE_FIELDS = [['date', 'Date'], ['meal', 'Meal break (min)'], ['rs', 'Rostered start'], ['rf', 'Rostered finish'], ['as', 'Actual start'],
+  ['af', 'Actual finish'], ['ot', 'Overtime/Oncall/Recall', 'wide'], ['com', 'Comments', 'wide'], ['ini', 'Initial'], ['cost', 'Cost centre']];
+function lineSummary(k, l, on) {
+  const v = state.form.v, g = c => v[`${k}.${c}`] || '';
+  const minOver = +avacSettings().minOver || 0;
+  const day = l ? dayName(l.dayKey) : 'Added';
+  const when = g('as') || g('af') ? `${g('as')}–${g('af')}` : '';
+  const why = !on && l ? (l.mins > 0 && l.mins < minOver ? ` (under ${minOver} min)` : !l.mins && l.type !== 'Leave' ? ' (no overtime)' : '') : '';
+  return `<b>${esc(day)} ${esc(g('date').replace(/\/\d{4}$/, ''))}</b><span>${esc(when)}${l && l.approx ? ' ≈' : ''}</span><span class="ot">${esc(g('ot') || (l && l.type === 'Leave' ? 'Leave' : ''))}${why}</span>`;
+}
+function lineItem(k, l, on) {
+  const open = state.editRow === k, v = state.form.v;
+  const left = l ? `<label class="tick"><input type="checkbox" data-pick="${esc(k)}" ${on ? 'checked' : ''} aria-label="Put this line on the form"></label>`
+    : `<button type="button" class="del" data-del="${esc(k)}" aria-label="Remove this added line">✕</button>`;
+  const editor = open ? `<div class="led">${LINE_FIELDS.map(([c, label, wide]) => `<label${wide ? ' class="wide"' : ''}>${label}<input type="text" data-k="${esc(k)}.${c}" value="${esc(v[`${k}.${c}`] || '')}"${c === 'ot' ? ' list="otTypes"' : ''}${TIME_COLS.includes(c) || c === 'meal' ? ' inputmode="numeric"' : ''} autocomplete="off" spellcheck="${c === 'com'}"></label>`).join('')}</div>` : '';
+  return `<li class="${on ? 'on' : 'off'}${open ? ' open' : ''}" data-row="${esc(k)}">${left}<button type="button" class="lsum" data-edit="${esc(k)}" aria-expanded="${open}">${lineSummary(k, l, on)}</button>${editor}</li>`;
+}
+function renderLines() {
+  const m = state.form;
+  $('#lineList').innerHTML = m.all.map(l => lineItem(l.key, l, m.isOn(l))).join('') + m.f.extra.map(k => lineItem(k, null, true)).join('');
+  $('#linesBtn').textContent = `Lines (${m.rows.length})`;
+  $('#linesNote').textContent = m.all.some(l => l.approx) ? '≈ marks a time next to a gap in the location data: worth a second look.' : '';
+}
+function setLinesOpen(open) {
+  $('#fvLines').hidden = !open;
+  $('#linesBtn').setAttribute('aria-expanded', String(open));
+  store.set('tos.linesOpen', open);
+  fitPaper();
+}
+
 function openForm(ws) {
   state.formWeek = ws;
-  const m = formModel(ws);
-  $('#paper').innerHTML = [...Array(m.pages)].map((_, p) => pageHTML(p, m.pages, m.v)).join('');
-  const n = m.lines.length;
-  $('#fvTitle').innerHTML = `${esc(weekLabel(ws))}<small>${n ? `${n} line${n === 1 ? '' : 's'} from your timeline` : 'No overtime found: blank form'}${m.edited ? ' · edited' : ''}</small>`;
+  const m = state.form = formModel(ws);
+  $('#paper').innerHTML = [...Array(m.pages)].map((_, p) => pageHTML(p, m)).join('');
+  $('#fvTitle').innerHTML = `${esc(weekLabel(ws))}<small>${m.edited ? 'Edited · saved on this phone' : 'Filled from your timeline'}</small>`;
   $('#fvRule').checked = store.get('tos.ruleOff', true);
   $('#fvReset').disabled = !m.edited;
-  document.title = `AVAC ${ws}`;
+  renderLines();
+  document.title = `AVAC week of ${ws}`;
   fitPaper();
   drawRuleOff();
+  updateTotals();
 }
-function saveCell(el) {
-  const k = el.dataset.k; if (!k || !state.formWeek) return;
-  const val = el.type === 'checkbox' ? el.checked : el.value;
-  // header and approval fields repeat on every page, so keep the copies in step
-  document.querySelectorAll('#paper [data-k]').forEach(o => { if (o !== el && o.dataset.k === k) { if (o.type === 'checkbox') o.checked = val; else o.value = val; } });
-  const F = formsStore();
-  const f = F[state.formWeek] || (F[state.formWeek] = { edits: {} });
-  f.edits[k] = val; f.updated = Date.now();
-  store.set('tos.forms', F);
+
+const splitKey = k => { const i = k.lastIndexOf('.'); return [k.slice(0, i), k.slice(i + 1)]; };
+function setCell(k, val, src) {
+  const m = state.form;
+  m.v[k] = val; m.f.edits[k] = val;
+  putFormState(m.ws, m.f);
+  document.querySelectorAll(`#formView [data-k="${cssq(k)}"]`).forEach(o => { if (o !== src) { if (o.type === 'checkbox') o.checked = !!val; else o.value = val; } });
+}
+// Typing into an empty line on the paper adds it as a line of its own.
+function adoptBlankRow(nk) {
+  const m = state.form, A = avacSettings(), k = `x${m.f.next++}`;
+  m.f.extra.push(k); m.rows.push({ k, l: null });
+  rowDefaults(m.v, k, null, A);
+  const tr = $(`#paper tr[data-row="${cssq(nk)}"]`);
+  if (tr) {
+    tr.dataset.row = k;
+    tr.querySelectorAll('[data-k]').forEach(el => {
+      const c = splitKey(el.dataset.k)[1]; el.dataset.k = `${k}.${c}`;
+      if (el.type !== 'checkbox' && !el.value && m.v[`${k}.${c}`]) el.value = m.v[`${k}.${c}`];
+    });
+  }
+  putFormState(m.ws, m.f);
+  renderLines();
+  return k;
+}
+function onCellInput(el) {
+  if (!state.form || !el.dataset.k) return;
+  let [rk, col] = splitKey(el.dataset.k);
+  if (/^n\d+$/.test(rk)) rk = adoptBlankRow(rk);
+  setCell(`${rk}.${col}`, el.type === 'checkbox' ? el.checked : el.value, el);
+  if (TIME_COLS.includes(col)) {
+    const g = c => state.form.v[`${rk}.${c}`] || '';
+    const ot = otFromTimes(g('ot'), g('rs'), g('rf'), g('as'), g('af'));
+    if (ot != null && ot !== g('ot')) setCell(`${rk}.ot`, ot);
+  }
+  afterEdit(rk);
+}
+function onCellChange(el) {
+  if (!state.form || !el.dataset.k) return;
+  if (el.type === 'checkbox') { onCellInput(el); return; }
+  const [rk, col] = splitKey(el.dataset.k);
+  if (TIME_COLS.includes(col)) {
+    const t = parseClock(el.value);
+    if (t != null && hhmm(t) !== el.value) { el.value = hhmm(t); onCellInput(el); }
+  } else if (col === 'ot') {
+    // Picking a bare entitlement such as "Recall Onsite" fills in its length from the line's times.
+    const p = parseOT(el.value), g = c => state.form.v[`${rk}.${c}`] || '';
+    if (p && p.mins == null && OT_TYPES.includes(p.type)) {
+      const ot = otFromTimes(p.type, g('rs'), g('rf'), g('as'), g('af'));
+      if (ot) { el.value = ot; onCellInput(el); }
+    }
+  }
+}
+function afterEdit(rk) {
   $('#fvReset').disabled = false;
+  const small = $('#fvTitle small'); if (small) small.textContent = 'Edited · saved on this phone';
+  const li = $(`#lineList li[data-row="${cssq(rk)}"]`);
+  if (li) {
+    const l = state.form.all.find(x => x.key === rk) || null;
+    li.querySelector('.lsum').innerHTML = lineSummary(rk, l, li.classList.contains('on'));
+  }
   drawRuleOff();
+  updateTotals();
 }
 
 function route() {
   const m = /^#form\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
   if (m && state.visits.length) {
     $('#app').hidden = true; $('#formView').hidden = false;
+    if (state.formWeek !== m[1]) state.editRow = null;
+    setLinesOpen(store.get('tos.linesOpen', window.innerWidth < 900));
     openForm(m[1]); window.scrollTo(0, 0);
   } else {
     if (!$('#formView').hidden) { $('#formView').hidden = true; $('#app').hidden = false; renderFormList(); }
-    state.formWeek = null; document.title = 'Time on Site';
+    state.formWeek = null; state.form = null; state.editRow = null; document.title = 'Time on Site';
   }
 }
 
@@ -1144,6 +1373,7 @@ const saveAvacSetting = e => {
   const A = store.get('tos.avac', {});
   A[k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.tagName === 'SELECT') ? (el.value === '' ? '' : +el.value) : el.value;
   store.set('tos.avac', A);
+  if (k === 'name') $('#avacDetails [data-a="initials"]').placeholder = initialsOf(el.value) || 'e.g. BW';
   clearTimeout(settingTimer); settingTimer = setTimeout(renderFormList, 250);
 };
 $('#avacDetails').addEventListener('input', saveAvacSetting);
@@ -1175,17 +1405,50 @@ $('#unlink').addEventListener('click', () => { store.del('tos.sheetUrl'); store.
 $('#forget').addEventListener('click', async () => {
   if (!confirm('Forget the saved location data, your details, rosters, workplaces, form edits and sheet link on this device? Your Google Sheet is not touched.')) return;
   await idb.del('data');
-  ['tos.sites', 'tos.roster', 'tos.rosters', 'tos.notes', 'tos.sharpen', 'tos.sheetUrl', 'tos.sheetLink', 'tos.avac', 'tos.avacPick', 'tos.avacType', 'tos.forms', 'tos.ruleOff'].forEach(k => store.del(k));
+  ['tos.sites', 'tos.roster', 'tos.rosters', 'tos.notes', 'tos.sharpen', 'tos.sheetUrl', 'tos.sheetLink', 'tos.avac', 'tos.avacPick', 'tos.avacType', 'tos.forms', 'tos.ruleOff', 'tos.linesOpen'].forEach(k => store.del(k));
   location.hash = ''; location.reload();
 });
 
 // form screen
-$('#paper').addEventListener('input', e => saveCell(e.target));
-$('#paper').addEventListener('change', e => { if (e.target.type === 'checkbox') saveCell(e.target); });
+const fv = $('#formView');
+fv.addEventListener('input', e => { if (e.target.dataset.k) onCellInput(e.target); });
+fv.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.k) { onCellChange(t); return; }
+  if (t.dataset.pick && state.form) {
+    const m = state.form, l = m.all.find(x => x.key === t.dataset.pick); if (!l) return;
+    if (t.checked === l.use) delete m.f.pick[l.key]; else m.f.pick[l.key] = t.checked;
+    putFormState(m.ws, m.f); openForm(m.ws);
+  }
+});
+$('#lineList').addEventListener('click', e => {
+  const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+  if (ed) {
+    const k = ed.dataset.edit;
+    state.editRow = state.editRow === k ? null : k;
+    renderLines();
+    if (state.editRow) { const li = $(`#lineList li[data-row="${cssq(k)}"]`); li && li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  } else if (del && state.form) {
+    const m = state.form, k = del.dataset.del;
+    if (!confirm('Remove this added line?')) return;
+    m.f.extra = m.f.extra.filter(x => x !== k);
+    for (const key of Object.keys(m.f.edits)) if (key.startsWith(`${k}.`)) delete m.f.edits[key];
+    putFormState(m.ws, m.f); openForm(m.ws);
+  }
+});
+$('#addLine').addEventListener('click', () => {
+  const m = state.form; if (!m) return;
+  const k = `x${m.f.next++}`; m.f.extra.push(k);
+  m.f.edits[`${k}.date`] = ''; // keeps the empty line saved until you fill it in
+  putFormState(m.ws, m.f);
+  state.editRow = k; openForm(m.ws);
+  const first = $(`#lineList [data-k="${cssq(k)}.date"]`); if (first) first.focus();
+});
+$('#linesBtn').addEventListener('click', () => setLinesOpen($('#fvLines').hidden));
 $('#fvRule').addEventListener('change', e => { store.set('tos.ruleOff', e.target.checked); drawRuleOff(); });
 $('#fvReset').addEventListener('click', () => {
-  if (!state.formWeek || !confirm('Throw away your edits to this form and rebuild it from the timeline?')) return;
-  const F = formsStore(); delete F[state.formWeek]; store.set('tos.forms', F); openForm(state.formWeek);
+  if (!state.formWeek || !confirm('Throw away your changes to this week and rebuild it from the timeline?')) return;
+  const F = formsStore(); delete F[state.formWeek]; store.set('tos.forms', F); state.editRow = null; openForm(state.formWeek);
 });
 $('#fvPrint').addEventListener('click', () => { document.activeElement && document.activeElement.blur(); window.print(); });
 $('#paperWrap').addEventListener('dblclick', e => { if (e.target.tagName !== 'INPUT') { state.zoomFull = !state.zoomFull; fitPaper(); } });
