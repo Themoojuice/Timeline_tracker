@@ -1,5 +1,5 @@
 // Time on Site service worker: works offline, always prefers the newest version when online.
-const CACHE = 'time-on-site-v3';
+const CACHE = 'time-on-site-v4';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './apps-script.gs',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png'];
 
